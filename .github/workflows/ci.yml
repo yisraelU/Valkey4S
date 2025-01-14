@@ -1,0 +1,39 @@
+name: Scala CI
+
+on:
+  pull_request: {}
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: 🔨 Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 🚀 Start Valkey
+        run: docker compose up -d
+
+      - name: 📦 Cache sbt & coursier
+        uses: coursier/cache-action@v6
+
+      - name: ❄️ Install Nix
+        uses: cachix/install-nix-action@v31.2.0
+
+      - name: 🧪 Run tests
+        run: nix run .#sbt -- testAll
+
+      - name: 🔍 Check for untracked changes
+        run: |
+          git status
+          ./scripts/check_dirty.sh
+
+      - name: 🧹 Stop Valkey
+        if: always()
+        run: docker compose down
