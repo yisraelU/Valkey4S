@@ -1,6 +1,6 @@
 package io.github.yisraelu.valkey4s.model
 
-import cats.ApplicativeThrow
+import cats.{ApplicativeThrow, FlatMap}
 import cats.syntax.all.*
 import glide.api.models.configuration as G
 import scala.concurrent.duration.FiniteDuration
@@ -103,9 +103,9 @@ sealed abstract class ValkeyClusterConfig {
 
     // Advanced configurations
     inflightRequestsLimit.foreach(builder.inflightRequestsLimit(_))
-    libName.foreach(builder.libName(_))
-    lazyConnect.foreach(builder.lazyConnect(_))
-    clientAZ.foreach(builder.clientAZ(_))
+    libName.foreach(builder.libName)
+    lazyConnect.foreach(builder.lazyConnect)
+    clientAZ.foreach(builder.clientAZ)
 
     // Build advanced configuration if needed
     connectionTimeout.foreach { timeout =>
@@ -118,15 +118,27 @@ sealed abstract class ValkeyClusterConfig {
   }
 
   /** Add a seed node address */
-  def withAddress(
+  def addAddress(
       host: String,
       port: Int = NodeAddress.DefaultPort
   ): ValkeyClusterConfig =
     copy(addresses = addresses :+ NodeAddress(host, port))
 
+  /** Add a seed node address */
+  def addAddress(nodeAddress: NodeAddress): ValkeyClusterConfig =
+    copy(addresses = addresses :+ nodeAddress)
+
   /** Set TLS */
   def withTls(enabled: Boolean = true): ValkeyClusterConfig =
     copy(useTls = enabled)
+
+  /** Enable TLS encryption */
+  def withTlsEnabled: ValkeyClusterConfig =
+    copy(useTls = true)
+
+  /** Disable TLS encryption */
+  def withTlsDisabled: ValkeyClusterConfig =
+    copy(useTls = false)
 
   /** Set request timeout */
   def withRequestTimeout(timeout: FiniteDuration): ValkeyClusterConfig =
@@ -152,11 +164,31 @@ sealed abstract class ValkeyClusterConfig {
   def withClientName(name: String): ValkeyClusterConfig =
     copy(clientName = Some(name))
 
-  /** Set maximum number of concurrent in-flight requests */
+  /** Set maximum number of concurrent in-flight requests (advanced performance tuning).
+    *
+    * This limits the number of concurrent requests that can be sent to the cluster
+    * before waiting for responses. Useful for controlling memory usage and backpressure.
+    *
+    * Example:
+    * {{{
+    * config.withInflightRequestsLimit(1000) // Limit to 1000 concurrent requests
+    * }}}
+    */
   def withInflightRequestsLimit(limit: Int): ValkeyClusterConfig =
     copy(inflightRequestsLimit = Some(limit))
 
-  /** Set connection timeout for establishing connections */
+  /** Set connection timeout for establishing connections (distinct from request timeout).
+    *
+    * This timeout applies to the initial TCP connection handshake, while requestTimeout
+    * applies to individual Redis commands after connection is established.
+    *
+    * Example:
+    * {{{
+    * config
+    *   .withConnectionTimeout(10.seconds)  // TCP connection timeout
+    *   .withRequestTimeout(5.seconds)      // Command execution timeout
+    * }}}
+    */
   def withConnectionTimeout(timeout: FiniteDuration): ValkeyClusterConfig =
     copy(connectionTimeout = Some(timeout))
 
@@ -164,11 +196,46 @@ sealed abstract class ValkeyClusterConfig {
   def withLibName(name: String): ValkeyClusterConfig =
     copy(libName = Some(name))
 
-  /** Set whether to connect lazily (on first operation) or eagerly (on client creation) */
-  def withLazyConnect(enabled: Boolean = true): ValkeyClusterConfig =
-    copy(lazyConnect = Some(enabled))
+  /** Enable lazy connection (defers connection until first operation).
+    *
+    * Lazy connection can reduce startup time but may cause the first operation to be slower.
+    *
+    * Example:
+    * {{{
+    * config.withLazyConnectEnabled // Connect on first operation (faster startup)
+    * }}}
+    */
+  def withLazyConnectEnabled: ValkeyClusterConfig =
+    copy(lazyConnect = Some(true))
 
-  /** Set client availability zone for AZ-affinity reads */
+  /** Disable lazy connection (establishes connection immediately on client creation).
+    *
+    * Eager connection is useful for fail-fast behavior and ensures the connection
+    * is ready before the first operation.
+    *
+    * Example:
+    * {{{
+    * config.withLazyConnectDisabled // Connect immediately (fail-fast)
+    * }}}
+    */
+  def withLazyConnectDisabled: ValkeyClusterConfig =
+    copy(lazyConnect = Some(false))
+
+  /** Set client availability zone for AZ-affinity read strategies.
+    *
+    * When combined with ReadFromStrategy.AzAffinity or AzAffinityReplicasAndPrimary,
+    * this routes read requests to nodes in the same availability zone for lower latency.
+    * Requires Valkey 8.0+ for AzAffinityReplicasAndPrimary strategy.
+    *
+    * Example:
+    * {{{
+    * config
+    *   .withClientAZ("us-east-1a")
+    *   .withReadFrom(ReadFromStrategy.AzAffinity)
+    *   // or for Valkey 8.0+:
+    *   .withReadFrom(ReadFromStrategy.AzAffinityReplicasAndPrimary)
+    * }}}
+    */
   def withClientAZ(az: String): ValkeyClusterConfig =
     copy(clientAZ = Some(az))
 }
@@ -264,8 +331,15 @@ object ValkeyClusterConfig {
       )
     )
 
-  /** Create from list of URI strings */
-  def fromUris[F[_]: ApplicativeThrow](
+  /** Create from list of URI strings
+    *
+    * All URIs must have consistent settings (TLS, credentials, protocol version).
+    * If URIs have conflicting settings, an error will be raised.
+    *
+    * @param uris List of seed node URIs
+    * @return Cluster configuration with validated consistent settings
+    */
+  def fromUris[F[_]: ApplicativeThrow: FlatMap](
       uris: List[String]
   ): F[ValkeyClusterConfig] = {
     if (uris.isEmpty) {
@@ -275,24 +349,71 @@ object ValkeyClusterConfig {
         )
       )
     } else {
-      uris.traverse(ValkeyClientConfig.fromUri[F]).map { configs =>
-        // Extract addresses from all configs
-        val allAddresses = configs.flatMap(_.addresses)
-
-        // Use settings from first config
-        val first = configs.head
-        ValkeyClusterConfig(
-          addresses = allAddresses,
-          useTls = first.useTls,
-          requestTimeout = first.requestTimeout,
-          credentials = first.credentials,
-          readFrom = first.readFrom,
-          reconnectStrategy = first.reconnectStrategy,
-          clientName = first.clientName,
-          protocolVersion = first.protocolVersion
-        )
+      uris.traverse(ValkeyClientConfig.fromUri[F]).flatMap { configs =>
+        validateConsistentSettings(configs) match {
+          case Left(error) => ApplicativeThrow[F].raiseError(new IllegalArgumentException(error))
+          case Right(validatedConfig) => ApplicativeThrow[F].pure(validatedConfig)
+        }
       }
     }
+  }
+
+  /** Validate that all configs have consistent settings
+    *
+    * Checks that TLS, credentials, and protocol version are consistent across all URIs.
+    *
+    * @param configs List of client configs parsed from URIs
+    * @return Either an error message or a validated cluster config
+    */
+  private def validateConsistentSettings(
+      configs: List[ValkeyClientConfig]
+  ): Either[String, ValkeyClusterConfig] = {
+    if (configs.isEmpty) {
+      return Left("No configurations provided")
+    }
+
+    val first = configs.head
+    val allAddresses = configs.flatMap(_.addresses)
+
+    // Check TLS consistency
+    val inconsistentTls = configs.exists(_.useTls != first.useTls)
+    if (inconsistentTls) {
+      return Left(
+        s"Inconsistent TLS settings: some URIs use TLS (rediss://) and others don't (redis://). " +
+          "All cluster seed nodes must have the same TLS setting."
+      )
+    }
+
+    // Check credentials consistency
+    val inconsistentCreds = configs.exists(_.credentials != first.credentials)
+    if (inconsistentCreds) {
+      return Left(
+        "Inconsistent credentials: all cluster seed nodes must have the same authentication settings."
+      )
+    }
+
+    // Check protocol version consistency
+    val inconsistentProtocol = configs.exists(_.protocolVersion != first.protocolVersion)
+    if (inconsistentProtocol) {
+      return Left(
+        s"Inconsistent protocol versions: all cluster seed nodes must use the same protocol version. " +
+          s"Found: ${configs.map(_.protocolVersion).distinct.mkString(", ")}"
+      )
+    }
+
+    // Use settings from first config (now validated to be consistent)
+    Right(
+      ValkeyClusterConfig(
+        addresses = allAddresses,
+        useTls = first.useTls,
+        requestTimeout = first.requestTimeout,
+        credentials = first.credentials,
+        readFrom = first.readFrom,
+        reconnectStrategy = first.reconnectStrategy,
+        clientName = first.clientName,
+        protocolVersion = first.protocolVersion
+      )
+    )
   }
 
   /** Builder-style constructor */

@@ -171,11 +171,31 @@ sealed abstract class ValkeyClientConfig {
   def withClientName(name: String): ValkeyClientConfig =
     copy(clientName = Some(name))
 
-  /** Set maximum number of concurrent in-flight requests */
+  /** Set maximum number of concurrent in-flight requests (advanced performance tuning).
+    *
+    * This limits the number of concurrent requests that can be sent to the server
+    * before waiting for responses. Useful for controlling memory usage and backpressure.
+    *
+    * Example:
+    * {{{
+    * config.withInflightRequestsLimit(1000) // Limit to 1000 concurrent requests
+    * }}}
+    */
   def withInflightRequestsLimit(limit: Int): ValkeyClientConfig =
     copy(inflightRequestsLimit = Some(limit))
 
-  /** Set connection timeout for establishing connections */
+  /** Set connection timeout for establishing connections (distinct from request timeout).
+    *
+    * This timeout applies to the initial TCP connection handshake, while requestTimeout
+    * applies to individual Redis commands after connection is established.
+    *
+    * Example:
+    * {{{
+    * config
+    *   .withConnectionTimeout(10.seconds)  // TCP connection timeout
+    *   .withRequestTimeout(5.seconds)      // Command execution timeout
+    * }}}
+    */
   def withConnectionTimeout(timeout: FiniteDuration): ValkeyClientConfig =
     copy(connectionTimeout = Some(timeout))
 
@@ -183,11 +203,46 @@ sealed abstract class ValkeyClientConfig {
   def withLibName(name: String): ValkeyClientConfig =
     copy(libName = Some(name))
 
-  /** Set whether to connect lazily (on first operation) or eagerly (on client creation) */
-  def withLazyConnect(enabled: Boolean = true): ValkeyClientConfig =
-    copy(lazyConnect = Some(enabled))
+  /** Enable lazy connection (defers connection until first operation).
+    *
+    * Lazy connection can reduce startup time but may cause the first operation to be slower.
+    *
+    * Example:
+    * {{{
+    * config.withLazyConnectEnabled // Connect on first operation (faster startup)
+    * }}}
+    */
+  def withLazyConnectEnabled: ValkeyClientConfig =
+    copy(lazyConnect = Some(true))
 
-  /** Set client availability zone for AZ-affinity reads */
+  /** Disable lazy connection (establishes connection immediately on client creation).
+    *
+    * Eager connection is useful for fail-fast behavior and ensures the connection
+    * is ready before the first operation.
+    *
+    * Example:
+    * {{{
+    * config.withLazyConnectDisabled // Connect immediately (fail-fast)
+    * }}}
+    */
+  def withLazyConnectDisabled: ValkeyClientConfig =
+    copy(lazyConnect = Some(false))
+
+  /** Set client availability zone for AZ-affinity read strategies.
+    *
+    * When combined with ReadFromStrategy.AzAffinity or AzAffinityReplicasAndPrimary,
+    * this routes read requests to nodes in the same availability zone for lower latency.
+    * Requires Valkey 8.0+ for AzAffinityReplicasAndPrimary strategy.
+    *
+    * Example:
+    * {{{
+    * config
+    *   .withClientAZ("us-east-1a")
+    *   .withReadFrom(ReadFromStrategy.AzAffinity)
+    *   // or for Valkey 8.0+:
+    *   .withReadFrom(ReadFromStrategy.AzAffinityReplicasAndPrimary)
+    * }}}
+    */
   def withClientAZ(az: String): ValkeyClientConfig =
     copy(clientAZ = Some(az))
 }
@@ -308,9 +363,9 @@ object ValkeyClientConfig {
     * - valkey://host:port/db
     *
     * @param uriString The URI string to parse
-    * @return Either an error message or the parsed config
+    * @return Either an error or the parsed config
     */
-  def fromUriString(uriString: String): Either[String, ValkeyClientConfig] =
+  def fromUriString(uriString: String): Either[Throwable, ValkeyClientConfig] =
     ValkeyUri.fromString(uriString).map(fromUri)
 
   /** Parse from URI string with effect handling
@@ -319,9 +374,7 @@ object ValkeyClientConfig {
     * @return Config wrapped in effect F
     */
   def fromUri[F[_]: ApplicativeThrow](uri: String): F[ValkeyClientConfig] =
-    ApplicativeThrow[F].fromEither(
-      fromUriString(uri).leftMap(msg => new IllegalArgumentException(msg))
-    )
+    ApplicativeThrow[F].fromEither(fromUriString(uri))
 
   /** Default config for localhost */
   val localhost: ValkeyClientConfig = ValkeyClientConfig(

@@ -16,6 +16,11 @@ sealed abstract class ValkeyClusterClient[F[_]] private (
 
 object ValkeyClusterClient {
 
+  /** Private implementation class */
+  private final case class ValkeyClusterClientImpl[F[_]](
+      override val underlying: GlideClusterClient
+  ) extends ValkeyClusterClient[F](underlying)
+
   /** Create a ValkeyClusterClient from configuration with Resource management
     *
     * @param config The cluster configuration
@@ -33,7 +38,7 @@ object ValkeyClusterClient {
         Async[F].delay(GlideClusterClient.createClient(glideConfig))
       )
       _ <- Log[F].info("Valkey cluster client created successfully")
-    } yield new ValkeyClusterClient[F](client) {}
+    } yield ValkeyClusterClientImpl[F](client)
 
     val release: ValkeyClusterClient[F] => F[Unit] = client =>
       (for {

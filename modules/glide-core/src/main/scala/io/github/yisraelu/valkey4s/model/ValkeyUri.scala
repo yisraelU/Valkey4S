@@ -1,7 +1,5 @@
 package io.github.yisraelu.valkey4s.model
 
-import cats.implicits.toBifunctorOps
-
 import java.net.URI
 import scala.util.Try
 
@@ -96,58 +94,67 @@ object ValkeyUri {
     case object Redis extends Scheme
     case object Rediss extends Scheme
 
-    def fromString(s: String): Either[String, Scheme] = s match {
+    def fromString(s: String): Either[String, Scheme] = s.toLowerCase match {
       case "valkey"  => Right(Valkey)
       case "valkeys" => Right(Valkeys)
       case "redis"   => Right(Redis)
       case "rediss"  => Right(Rediss)
-      case other     => Left(s"Invalid scheme $other")
+      case other     => Left(s"Invalid scheme '$other'. Must be one of: valkey, valkeys, redis, rediss")
     }
   }
 
-  /** Parse a URI string into a ValkeyUri
+  /** Parse a URI string into a ValkeyUri (unsafe - throws on invalid input)
     *
     * @param uriString The URI string to parse
-    * @return Either an error message or the parsed URI
+    * @return The parsed ValkeyUri
+    * @throws IllegalArgumentException if the URI is invalid
     */
-  def fromString(uriString: String): Either[String, ValkeyUri] = {
+  def unsafeFromString(uriString: String): ValkeyUri = {
+    val parsed =  new URI(uriString)
 
-    for {
-      parsed <- Try { new URI(uriString) }.toEither.leftMap(ex =>
-        s"invalid uri ex: $ex"
-      )
-      scheme <- Scheme.fromString(parsed.getScheme)
-    } yield {
-      val host = Option(parsed.getHost).getOrElse("localhost")
-      val port =
-        if (parsed.getPort > 0) parsed.getPort else NodeAddress.DefaultPort
-
-      // Parse credentials from userInfo
-      val credentials: Option[ServerCredentials] =
-        Option(parsed.getUserInfo).flatMap { userInfo =>
-          userInfo.split(":", 2) match {
-            case Array("", password) =>
-              Some(ServerCredentials.password(password))
-            case Array(username, password) =>
-              Some(ServerCredentials.usernamePassword(username, password))
-            case _ => None
-          }
-        }
-
-      // Parse database from path
-      val database: Option[Int] = Option(parsed.getPath)
-        .filter(_.nonEmpty)
-        .map(_.stripPrefix("/"))
-        .filter(_.nonEmpty)
-        .flatMap(db => scala.util.Try(db.toInt).toOption)
-
-      ValkeyUri(
-        scheme = scheme,
-        host = host,
-        port = port,
-        credentials = credentials,
-        database = database
+    val scheme = Scheme.fromString(parsed.getScheme).getOrElse {
+      throw new IllegalArgumentException(
+        s"Invalid scheme '${parsed.getScheme}'. Must be one of: valkey, valkeys, redis, rediss"
       )
     }
+
+    val host = Option(parsed.getHost).getOrElse("localhost")
+    val port =
+      if (parsed.getPort > 0) parsed.getPort else NodeAddress.DefaultPort
+
+    // Parse credentials from userInfo
+    val credentials: Option[ServerCredentials] =
+      Option(parsed.getUserInfo).flatMap { userInfo =>
+        userInfo.split(":", 2) match {
+          case Array("", password) =>
+            Some(ServerCredentials.password(password))
+          case Array(username, password) =>
+            Some(ServerCredentials.usernamePassword(username, password))
+          case _ => None
+        }
+      }
+
+    // Parse database from path
+    val database: Option[Int] = Option(parsed.getPath)
+      .filter(_.nonEmpty)
+      .map(_.stripPrefix("/"))
+      .filter(_.nonEmpty)
+      .flatMap(db => scala.util.Try(db.toInt).toOption)
+
+    ValkeyUri(
+      scheme = scheme,
+      host = host,
+      port = port,
+      credentials = credentials,
+      database = database
+    )
   }
+
+  /** Parse a URI string into a ValkeyUri (safe - returns Either)
+    *
+    * @param uriString The URI string to parse
+    * @return Either an error or the parsed URI
+    */
+  def fromString(uriString: String): Either[Throwable, ValkeyUri] =
+    Try(unsafeFromString(uriString)).toEither
 }

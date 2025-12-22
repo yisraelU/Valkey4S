@@ -2,6 +2,7 @@ package io.github.yisraelu.valkey4s.examples
 
 import cats.effect._
 import io.github.yisraelu.valkey4s.Valkey
+import io.github.yisraelu.valkey4s.codec.ValkeyCodec.stringCodec
 import io.github.yisraelu.valkey4s.effect.Log
 import io.github.yisraelu.valkey4s.model._
 import scala.concurrent.duration._
@@ -27,8 +28,8 @@ object ClusterExample extends IOApp.Simple {
       clientName = Some("valkey4s-example")
     )
 
-    // Use the cluster
-    Valkey[IO].fromClusterConfig(config).use { valkey =>
+    // Use the cluster (with UTF-8 string codec)
+    Valkey[IO].fromClusterConfig[String, String](config).use { valkey =>
       for {
         _ <- IO.println("=== Cluster Operations ===")
 

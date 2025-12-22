@@ -2,6 +2,7 @@ package io.github.yisraelu.valkey4s.examples
 
 import cats.effect._
 import io.github.yisraelu.valkey4s.Valkey
+import io.github.yisraelu.valkey4s.codec.ValkeyCodec.stringCodec
 import io.github.yisraelu.valkey4s.effect.Log
 import io.github.yisraelu.valkey4s.model._
 import scala.concurrent.duration._
@@ -22,27 +23,26 @@ object ConfigExample extends IOApp.Simple {
     val tlsExample = Valkey[IO].utf8("rediss://secure-server:6380")
 
     // Example 4: Full configuration with all options
-    val config = ValkeyClientConfig
-      .builder
-      .withAddress("localhost", 6379)
-      .withTls(false)
-      .withRequestTimeout(5.seconds)
-      .withPassword("mypassword")
-      .withDatabase(0)
-      .withClientName("my-app")
-      .withReadFrom(ReadFromStrategy.Primary)
-      .copy(
-        protocolVersion = ProtocolVersion.RESP3,
-        reconnectStrategy = Some(
-          BackOffStrategy.ExponentialBackoff(
-            numOfRetries = 5,
-            baseFactor = 100.millis,
-            exponentBase = 2
-          )
+    val config = ValkeyClientConfig(
+      addresses = List(NodeAddress("localhost", 6379)),
+      useTls = false,
+      requestTimeout = Some(5.seconds),
+      credentials = Some(ServerCredentials.password("mypassword")),
+      readFrom = Some(ReadFromStrategy.Primary),
+      reconnectStrategy = Some(
+        BackOffStrategy.ExponentialBackoff(
+          numOfRetries = 5,
+          baseFactor = 100.millis,
+          exponentBase = 2,
+          jitterPercent = 10
         )
-      )
+      ),
+      databaseId = Some(0),
+      clientName = Some("my-app"),
+      protocolVersion = ProtocolVersion.RESP3
+    )
 
-    val advancedExample = Valkey[IO].fromConfig(config)
+    val advancedExample = Valkey[IO].fromConfig[String, String](config)
 
     // Use the simple example
     simpleExample.use { valkey =>

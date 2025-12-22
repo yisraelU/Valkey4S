@@ -10,6 +10,11 @@ val supportedScalaVersions = List(Scala213, Scala3)
 ThisBuild / tlBaseVersion := "0.0"
 ThisBuild / scalaVersion := Scala213
 
+def pred[A](p: Boolean, t: => Seq[A], f: => Seq[A]): Seq[A] =
+  if (p) t else f
+
+def getVersion(strVersion: String): Option[(Long, Long)] = CrossVersion.partialVersion(strVersion)
+
 // Common settings for all modules
 lazy val commonSettings = Seq(
   scalacOptions ++= {
@@ -29,7 +34,14 @@ lazy val commonSettings = Seq(
         )
       case _ => Seq.empty
     }
-  }
+  },
+  Compile / unmanagedSourceDirectories ++= {
+    getVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq("scala-2.12", "scala-2")
+      case Some((2, 13)) => Seq("scala-2.13+", "scala-2")
+      case _             => Seq("scala-2.13+", "scala-3")
+    }
+  }.map(baseDirectory.value / "src" / "main" / _),
 )
 lazy val root = project
   .in(file("."))
@@ -38,7 +50,7 @@ lazy val root = project
     organization := "io.github.yisraelu",
     publish / skip := true,
   )
-  .aggregate(core.projectRefs ++ effects.projectRefs : _*)
+  .aggregate(core.projectRefs ++ effects.projectRefs ++ examples.projectRefs : _*)
 
 
 
@@ -67,16 +79,18 @@ lazy val core = (projectMatrix in file("modules/glide-core"))
   .settings(
     name := "valkey4s-core",
     libraryDependencies ++= Seq(
-      "io.valkey" % "valkey-glide" % "2.2.3" classifier osClassifier,
+      "io.valkey" % "valkey-glide" % "2.2.4" classifier osClassifier,
       "org.typelevel" %% "cats-core" % "2.13.0",
       "org.typelevel" %% "cats-effect" % "3.6.3",
-       "org.typelevel" %% "literally" % "1.2.0",
-
+      "org.typelevel" %% "literally" % "1.2.0",
 // Test dependencies
       "org.scalameta" %% "munit" % "1.0.0" % Test,
       "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
       "org.testcontainers" % "testcontainers" % "1.19.3" % Test,
-    )
+    ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 13)) => Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
+      case _ => Seq.empty
+    })
   )
 
 lazy val effects = (projectMatrix in file("modules/glide-effects"))
@@ -94,7 +108,19 @@ lazy val effects = (projectMatrix in file("modules/glide-effects"))
     )
   )
 
+lazy val examples = (projectMatrix in file("examples"))
+  .dependsOn(core, effects)
+  .jvmPlatform(scalaVersions = supportedScalaVersions)
+  .settings(commonSettings)
+  .settings(
+    name := "valkey4s-examples",
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-effect" % "3.6.3"
+    )
+  )
+
 // Convenience commands for cross-compilation
-addCommandAlias("compileAll", ";+core/compile ;+effects/compile")
+addCommandAlias("compileAll", ";+core/compile ;+effects/compile ;+examples/compile")
 addCommandAlias("testAll", ";+core/test ;+effects/test")
 addCommandAlias("testAllQuick", ";+core/testQuick ;+effects/testQuick")

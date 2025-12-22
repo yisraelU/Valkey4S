@@ -16,6 +16,11 @@ sealed abstract class ValkeyClient[F[_]] private (
 
 object ValkeyClient {
 
+  /** Private implementation class */
+  private final case class ValkeyClientImpl[F[_]](
+      override val underlying: GlideClient
+  ) extends ValkeyClient[F](underlying)
+
   /** Create a ValkeyClient from configuration with Resource management
     *
     * @param config The client configuration
@@ -33,7 +38,7 @@ object ValkeyClient {
         Async[F].delay(GlideClient.createClient(glideConfig))
       )
       _ <- Log[F].info("Valkey client created successfully")
-    } yield new ValkeyClient[F](client) {}
+    } yield ValkeyClientImpl[F](client)
 
     val release: ValkeyClient[F] => F[Unit] = client =>
       (for {
