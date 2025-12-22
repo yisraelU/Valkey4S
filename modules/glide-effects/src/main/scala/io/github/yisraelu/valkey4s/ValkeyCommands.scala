@@ -1,6 +1,6 @@
 package io.github.yisraelu.valkey4s
 
-import io.github.yisraelu.valkey4s.algebra._
+import io.github.yisraelu.valkey4s.algebra.*
 
 /** Main command trait - extends all command algebras
   *

@@ -19,7 +19,7 @@ class ValkeyContainer
   withExposedPorts(6379)
 
   /** Get the connection URI for this container */
-  def uri: String = s"redis://${getHost}:${getMappedPort(6379)}"
+  def uri: String = s"valkey://${getHost}:${getMappedPort(6379)}"
 
   /** Get the host */
   def host: String = getHost

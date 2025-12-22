@@ -5,7 +5,7 @@ import munit.FunSuite
 class ValkeyCodecSuite extends FunSuite {
 
   test("StringCodec should encode and decode strings correctly") {
-    val codec = ValkeyCodec.utf8Codec
+    val codec = Codec.utf8Codec
     val original = "Hello, Valkey!"
 
     val encoded = codec.encode(original)
@@ -15,7 +15,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("StringCodec should handle empty strings") {
-    val codec = ValkeyCodec.utf8Codec
+    val codec = Codec.utf8Codec
     val original = ""
 
     val encoded = codec.encode(original)
@@ -25,7 +25,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("StringCodec should handle UTF-8 characters") {
-    val codec = ValkeyCodec.utf8Codec
+    val codec = Codec.utf8Codec
     val original = "Hello 世界 🌍"
 
     val encoded = codec.encode(original)
@@ -35,7 +35,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("ByteArrayCodec should encode and decode bytes correctly") {
-    val codec = ValkeyCodec.byteArrayCodec
+    val codec = Codec.byteArrayCodec
     val original = Array[Byte](1, 2, 3, 4, 5)
 
     val encoded = codec.encode(original)
@@ -45,7 +45,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("ByteArrayCodec should handle empty arrays") {
-    val codec = ValkeyCodec.byteArrayCodec
+    val codec = Codec.byteArrayCodec
     val original = Array.empty[Byte]
 
     val encoded = codec.encode(original)
@@ -55,7 +55,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("LongCodec should encode and decode longs correctly") {
-    val codec = ValkeyCodec.longCodec
+    val codec = Codec.longCodec
     val original = 42L
 
     val encoded = codec.encode(original)
@@ -65,7 +65,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("LongCodec should handle negative numbers") {
-    val codec = ValkeyCodec.longCodec
+    val codec = Codec.longCodec
     val original = -12345L
 
     val encoded = codec.encode(original)
@@ -75,7 +75,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("IntCodec should encode and decode ints correctly") {
-    val codec = ValkeyCodec.intCodec
+    val codec = Codec.intCodec
     val original = 100
 
     val encoded = codec.encode(original)
@@ -85,7 +85,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("DoubleCodec should encode and decode doubles correctly") {
-    val codec = ValkeyCodec.doubleCodec
+    val codec = Codec.doubleCodec
     val original = 3.14159
 
     val encoded = codec.encode(original)
@@ -95,7 +95,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("DoubleCodec should handle scientific notation") {
-    val codec = ValkeyCodec.doubleCodec
+    val codec = Codec.doubleCodec
     val original = 1.23e10
 
     val encoded = codec.encode(original)

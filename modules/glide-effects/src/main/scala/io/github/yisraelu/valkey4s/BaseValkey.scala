@@ -3,7 +3,7 @@ package io.github.yisraelu.valkey4s
 import cats.effect._
 import cats.syntax.all._
 import glide.api.BaseClient
-import io.github.yisraelu.valkey4s.codec.ValkeyCodec
+import io.github.yisraelu.valkey4s.codec.Codec
 import io.github.yisraelu.valkey4s.connection.{
   ValkeyClient,
   ValkeyClusterClient
@@ -22,14 +22,14 @@ import scala.jdk.CollectionConverters._
   * @param tx Transaction runner (stub for Phase 1)
   */
 private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
-    protected val client: Either[ValkeyClient[F], ValkeyClusterClient[F]],
-    protected val keyCodec: ValkeyCodec[K],
-    protected val valueCodec: ValkeyCodec[V],
-    protected val tx: TxRunner[F]
+                                                                     protected val client: Either[ValkeyClient[F], ValkeyClusterClient[F]],
+                                                                     protected val keyCodec: Codec[K],
+                                                                     protected val valueCodec: Codec[V],
+                                                                     protected val tx: TxRunner[F]
 ) extends ValkeyCommands[F, K, V] {
 
   /** Get the underlying Glide BaseClient (works for both standalone and cluster) */
-  protected def baseClient: BaseClient = client match {
+  private val baseClient: BaseClient = client match {
     case Left(standalone) => standalone.underlying
     case Right(cluster)   => cluster.underlying
   }
@@ -243,16 +243,16 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
 
 /** Standalone client commands implementation */
 private[valkey4s] class ValkeyStandalone[F[_]: Async: Log, K, V](
-    client: ValkeyClient[F],
-    keyCodec: ValkeyCodec[K],
-    valueCodec: ValkeyCodec[V],
-    tx: TxRunner[F]
+                                                                  client: ValkeyClient[F],
+                                                                  keyCodec: Codec[K],
+                                                                  valueCodec: Codec[V],
+                                                                  tx: TxRunner[F]
 ) extends BaseValkey[F, K, V](Left(client), keyCodec, valueCodec, tx)
 
 /** Cluster client commands implementation */
 private[valkey4s] class ValkeyCluster[F[_]: Async: Log, K, V](
-    client: ValkeyClusterClient[F],
-    keyCodec: ValkeyCodec[K],
-    valueCodec: ValkeyCodec[V],
-    tx: TxRunner[F]
+                                                               client: ValkeyClusterClient[F],
+                                                               keyCodec: Codec[K],
+                                                               valueCodec: Codec[V],
+                                                               tx: TxRunner[F]
 ) extends BaseValkey[F, K, V](Right(client), keyCodec, valueCodec, tx)

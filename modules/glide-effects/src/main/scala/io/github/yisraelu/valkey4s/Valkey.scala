@@ -1,7 +1,7 @@
 package io.github.yisraelu.valkey4s
 
 import cats.effect._
-import io.github.yisraelu.valkey4s.codec.ValkeyCodec
+import io.github.yisraelu.valkey4s.codec.Codec
 import io.github.yisraelu.valkey4s.connection.{
   ValkeyClient,
   ValkeyClusterClient
@@ -50,8 +50,8 @@ object Valkey {
         tx <- MkValkey[F].txRunner
       } yield new ValkeyStandalone[F, String, String](
         client,
-        ValkeyCodec.utf8Codec,
-        ValkeyCodec.utf8Codec,
+        Codec.utf8Codec,
+        Codec.utf8Codec,
         tx
       )
 
@@ -65,8 +65,8 @@ object Valkey {
     def simple[K, V](
         uri: String
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       for {
         client <- MkValkey[F].clientFromUri(uri)
@@ -85,8 +85,8 @@ object Valkey {
     def fromConfig[K, V](
         config: ValkeyClientConfig
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       for {
         client <- MkValkey[F].clientFromConfig(config)
@@ -105,8 +105,8 @@ object Valkey {
     def fromClient[K, V](
         client: ValkeyClient[F]
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       MkValkey[F].txRunner.map { tx =>
         new ValkeyStandalone[F, K, V](client, kCodec, vCodec, tx)
@@ -136,8 +136,8 @@ object Valkey {
         tx <- MkValkey[F].txRunner
       } yield new ValkeyCluster[F, String, String](
         client,
-        ValkeyCodec.utf8Codec,
-        ValkeyCodec.utf8Codec,
+        Codec.utf8Codec,
+        Codec.utf8Codec,
         tx
       )
 
@@ -151,8 +151,8 @@ object Valkey {
     def cluster[K, V](
         seedUris: String*
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       for {
         client <- MkValkey[F].clusterClientFromUris(seedUris: _*)
@@ -169,8 +169,8 @@ object Valkey {
     def fromClusterConfig[K, V](
         config: ValkeyClusterConfig
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       for {
         client <- MkValkey[F].clusterClient(config)
@@ -187,8 +187,8 @@ object Valkey {
     def fromClusterClient[K, V](
         client: ValkeyClusterClient[F]
     )(implicit
-        kCodec: ValkeyCodec[K],
-        vCodec: ValkeyCodec[V]
+      kCodec: Codec[K],
+      vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       MkValkey[F].txRunner.map { tx =>
         new ValkeyCluster[F, K, V](client, kCodec, vCodec, tx)

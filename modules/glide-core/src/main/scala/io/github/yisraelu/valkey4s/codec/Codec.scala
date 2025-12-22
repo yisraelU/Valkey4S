@@ -8,17 +8,17 @@ import java.nio.charset.StandardCharsets
   *
   * @tparam A The type to encode/decode
   */
-trait ValkeyCodec[A] {
+trait Codec[A] {
   def encode(value: A): GlideString
   def decode(gs: GlideString): A
 }
 
-object ValkeyCodec {
+object Codec {
 
-  def apply[A](implicit codec: ValkeyCodec[A]): ValkeyCodec[A] = codec
+  def apply[A](implicit codec: Codec[A]): Codec[A] = codec
 
   /** String codec using UTF-8 encoding */
-  implicit val utf8Codec: ValkeyCodec[String] = new ValkeyCodec[String] {
+  implicit val utf8Codec: Codec[String] = new Codec[String] {
     def encode(value: String): GlideString =
       GlideString.of(value.getBytes(StandardCharsets.UTF_8))
 
@@ -27,8 +27,8 @@ object ValkeyCodec {
   }
 
   /** Byte array codec (pass-through) */
-  implicit val byteArrayCodec: ValkeyCodec[Array[Byte]] =
-    new ValkeyCodec[Array[Byte]] {
+  implicit val byteArrayCodec: Codec[Array[Byte]] =
+    new Codec[Array[Byte]] {
       def encode(value: Array[Byte]): GlideString =
         GlideString.of(value)
 
@@ -37,7 +37,7 @@ object ValkeyCodec {
     }
 
   /** Long codec (stores as string representation) */
-  implicit val longCodec: ValkeyCodec[Long] = new ValkeyCodec[Long] {
+  implicit val longCodec: Codec[Long] = new Codec[Long] {
     def encode(value: Long): GlideString =
       utf8Codec.encode(value.toString)
 
@@ -46,7 +46,7 @@ object ValkeyCodec {
   }
 
   /** Int codec (stores as string representation) */
-  implicit val intCodec: ValkeyCodec[Int] = new ValkeyCodec[Int] {
+  implicit val intCodec: Codec[Int] = new Codec[Int] {
     def encode(value: Int): GlideString =
       utf8Codec.encode(value.toString)
 
@@ -55,7 +55,7 @@ object ValkeyCodec {
   }
 
   /** Double codec (stores as string representation) */
-  implicit val doubleCodec: ValkeyCodec[Double] = new ValkeyCodec[Double] {
+  implicit val doubleCodec: Codec[Double] = new Codec[Double] {
     def encode(value: Double): GlideString =
       utf8Codec.encode(value.toString)
 
