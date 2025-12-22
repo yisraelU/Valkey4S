@@ -18,7 +18,7 @@ object ValkeyCodec {
   def apply[A](implicit codec: ValkeyCodec[A]): ValkeyCodec[A] = codec
 
   /** String codec using UTF-8 encoding */
-  implicit val stringCodec: ValkeyCodec[String] = new ValkeyCodec[String] {
+  implicit val utf8Codec: ValkeyCodec[String] = new ValkeyCodec[String] {
     def encode(value: String): GlideString =
       GlideString.of(value.getBytes(StandardCharsets.UTF_8))
 
@@ -39,27 +39,27 @@ object ValkeyCodec {
   /** Long codec (stores as string representation) */
   implicit val longCodec: ValkeyCodec[Long] = new ValkeyCodec[Long] {
     def encode(value: Long): GlideString =
-      stringCodec.encode(value.toString)
+      utf8Codec.encode(value.toString)
 
     def decode(gs: GlideString): Long =
-      stringCodec.decode(gs).toLong
+      utf8Codec.decode(gs).toLong
   }
 
   /** Int codec (stores as string representation) */
   implicit val intCodec: ValkeyCodec[Int] = new ValkeyCodec[Int] {
     def encode(value: Int): GlideString =
-      stringCodec.encode(value.toString)
+      utf8Codec.encode(value.toString)
 
     def decode(gs: GlideString): Int =
-      stringCodec.decode(gs).toInt
+      utf8Codec.decode(gs).toInt
   }
 
   /** Double codec (stores as string representation) */
   implicit val doubleCodec: ValkeyCodec[Double] = new ValkeyCodec[Double] {
     def encode(value: Double): GlideString =
-      stringCodec.encode(value.toString)
+      utf8Codec.encode(value.toString)
 
     def decode(gs: GlideString): Double =
-      stringCodec.decode(gs).toDouble
+      utf8Codec.decode(gs).toDouble
   }
 }

@@ -2,7 +2,7 @@ package io.github.yisraelu.valkey4s.examples
 
 import cats.effect._
 import io.github.yisraelu.valkey4s.Valkey
-import io.github.yisraelu.valkey4s.codec.ValkeyCodec.stringCodec
+import io.github.yisraelu.valkey4s.codec.ValkeyCodec.utf8Codec
 import io.github.yisraelu.valkey4s.effect.Log
 import io.github.yisraelu.valkey4s.model._
 import scala.concurrent.duration._

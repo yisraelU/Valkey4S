@@ -31,8 +31,8 @@ sealed abstract class ValkeyUri {
   /** Whether this URI requires TLS */
   def useTls: Boolean = scheme.requiresTls
 
-  /** Convert to a standard URI string */
-  def toUriString: String = {
+  /** Convert to java.net.URI */
+  def toURI: URI = {
     val auth = credentials match {
       case Some(p: ServerCredentials.Password) => s":${p.password}@"
       case Some(up: ServerCredentials.UsernamePassword) =>
@@ -40,8 +40,22 @@ sealed abstract class ValkeyUri {
       case None => ""
     }
     val db = database.map(d => s"/$d").getOrElse("")
-    s"${scheme.name}://$auth$host:$port$db"
+    new URI(s"${scheme.name}://$auth$host:$port$db")
   }
+
+  /** Check if this URI is consistent with another for cluster configuration.
+    *
+    * Two URIs are considered consistent if they have:
+    * - Same TLS setting (both use TLS or both don't)
+    * - Same credentials (both have same auth or both have none)
+    *
+    * This is used to validate that all cluster seed nodes have compatible settings.
+    *
+    * @param other The other URI to compare against
+    * @return true if URIs are consistent for clustering
+    */
+  def isConsistentWith(other: ValkeyUri): Boolean =
+    this.useTls == other.useTls && this.credentials == other.credentials
 }
 
 object ValkeyUri {

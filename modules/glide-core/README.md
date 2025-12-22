@@ -52,15 +52,16 @@ val config = ValkeyClientConfig(
 import io.github.yisraelu.valkey4s.codec._
 
 // Built-in codecs
-ValkeyCodec.stringCodec      // UTF-8 strings
-ValkeyCodec.byteArrayCodec   // Raw bytes
-ValkeyCodec.longCodec        // Longs
-ValkeyCodec.intCodec         // Ints
-ValkeyCodec.doubleCodec      // Doubles
+ValkeyCodec.utf8Codec // UTF-8 strings
+ValkeyCodec.byteArrayCodec // Raw bytes
+ValkeyCodec.longCodec // Longs
+ValkeyCodec.intCodec // Ints
+ValkeyCodec.doubleCodec // Doubles
 
 // Custom codec
 implicit val myCodec: ValkeyCodec[MyType] = new ValkeyCodec[MyType] {
   def encode(value: MyType): GlideString = ???
+
   def decode(gs: GlideString): MyType = ???
 }
 ```

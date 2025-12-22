@@ -45,7 +45,7 @@ if [[ "$1" == "--integration" ]] || [[ "$1" == "-i" ]]; then
 elif [[ "$1" == "--unit" ]] || [[ "$1" == "-u" ]]; then
     echo "Running unit tests only..."
     echo ""
-    sbt glideCore/test
+    sbt core/test
     echo ""
     echo "✅ Unit tests completed!"
 elif [[ "$1" == "--watch" ]] || [[ "$1" == "-w" ]]; then
@@ -60,7 +60,7 @@ else
     echo ""
     echo "Running unit tests by default..."
     echo ""
-    sbt glideCore/test
+    sbt core/test
     echo ""
     echo "✅ Unit tests completed!"
     echo ""

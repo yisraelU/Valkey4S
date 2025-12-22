@@ -50,8 +50,8 @@ object Valkey {
         tx <- MkValkey[F].txRunner
       } yield new ValkeyStandalone[F, String, String](
         client,
-        ValkeyCodec.stringCodec,
-        ValkeyCodec.stringCodec,
+        ValkeyCodec.utf8Codec,
+        ValkeyCodec.utf8Codec,
         tx
       )
 
@@ -136,8 +136,8 @@ object Valkey {
         tx <- MkValkey[F].txRunner
       } yield new ValkeyCluster[F, String, String](
         client,
-        ValkeyCodec.stringCodec,
-        ValkeyCodec.stringCodec,
+        ValkeyCodec.utf8Codec,
+        ValkeyCodec.utf8Codec,
         tx
       )
 

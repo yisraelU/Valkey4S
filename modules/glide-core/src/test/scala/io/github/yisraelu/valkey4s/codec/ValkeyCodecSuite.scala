@@ -5,7 +5,7 @@ import munit.FunSuite
 class ValkeyCodecSuite extends FunSuite {
 
   test("StringCodec should encode and decode strings correctly") {
-    val codec = ValkeyCodec.stringCodec
+    val codec = ValkeyCodec.utf8Codec
     val original = "Hello, Valkey!"
 
     val encoded = codec.encode(original)
@@ -15,7 +15,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("StringCodec should handle empty strings") {
-    val codec = ValkeyCodec.stringCodec
+    val codec = ValkeyCodec.utf8Codec
     val original = ""
 
     val encoded = codec.encode(original)
@@ -25,7 +25,7 @@ class ValkeyCodecSuite extends FunSuite {
   }
 
   test("StringCodec should handle UTF-8 characters") {
-    val codec = ValkeyCodec.stringCodec
+    val codec = ValkeyCodec.utf8Codec
     val original = "Hello 世界 🌍"
 
     val encoded = codec.encode(original)

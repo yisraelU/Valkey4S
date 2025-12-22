@@ -97,7 +97,6 @@ sealed abstract class ValkeyClusterConfig {
     readFrom.foreach(r => builder.readFrom(r.toGlide))
     reconnectStrategy.foreach(s => builder.reconnectStrategy(s.toGlide))
     clientName.foreach(builder.clientName(_))
-
     // Protocol version
     builder.protocol(protocolVersion.toGlide)
 
@@ -333,7 +332,7 @@ object ValkeyClusterConfig {
 
   /** Create from list of URI strings
     *
-    * All URIs must have consistent settings (TLS, credentials, protocol version).
+    * All URIs must have consistent settings (TLS and credentials).
     * If URIs have conflicting settings, an error will be raised.
     *
     * @param uris List of seed node URIs
@@ -349,71 +348,66 @@ object ValkeyClusterConfig {
         )
       )
     } else {
-      uris.traverse(ValkeyClientConfig.fromUri[F]).flatMap { configs =>
-        validateConsistentSettings(configs) match {
+      // Parse all URIs
+      uris.traverse(uri => ApplicativeThrow[F].fromEither(ValkeyUri.fromString(uri))).flatMap { parsedUris =>
+        // Validate consistency
+        validateConsistentUris(parsedUris) match {
           case Left(error) => ApplicativeThrow[F].raiseError(new IllegalArgumentException(error))
-          case Right(validatedConfig) => ApplicativeThrow[F].pure(validatedConfig)
+          case Right(_) =>
+            // All URIs are consistent, convert to configs and build cluster config
+            val configs = parsedUris.map(ValkeyClientConfig.fromUri)
+            val first = configs.head
+            val allAddresses = configs.flatMap(_.addresses)
+
+            ApplicativeThrow[F].pure(
+              ValkeyClusterConfig(
+                addresses = allAddresses,
+                useTls = first.useTls,
+                requestTimeout = first.requestTimeout,
+                credentials = first.credentials,
+                readFrom = first.readFrom,
+                reconnectStrategy = first.reconnectStrategy,
+                clientName = first.clientName,
+                protocolVersion = first.protocolVersion
+              )
+            )
         }
       }
     }
   }
 
-  /** Validate that all configs have consistent settings
+  /** Validate that all URIs have consistent settings
     *
-    * Checks that TLS, credentials, and protocol version are consistent across all URIs.
+    * Checks that TLS and credentials are consistent across all URIs using ValkeyUri.isConsistentWith.
     *
-    * @param configs List of client configs parsed from URIs
-    * @return Either an error message or a validated cluster config
+    * @param uris List of parsed URIs
+    * @return Either an error message or Unit on success
     */
-  private def validateConsistentSettings(
-      configs: List[ValkeyClientConfig]
-  ): Either[String, ValkeyClusterConfig] = {
-    if (configs.isEmpty) {
-      return Left("No configurations provided")
+  private def validateConsistentUris(
+      uris: List[ValkeyUri]
+  ): Either[String, Unit] = {
+    if (uris.isEmpty) {
+      return Left("No URIs provided")
     }
 
-    val first = configs.head
-    val allAddresses = configs.flatMap(_.addresses)
+    val first = uris.head
+    val inconsistent = uris.tail.find(!first.isConsistentWith(_))
 
-    // Check TLS consistency
-    val inconsistentTls = configs.exists(_.useTls != first.useTls)
-    if (inconsistentTls) {
-      return Left(
-        s"Inconsistent TLS settings: some URIs use TLS (rediss://) and others don't (redis://). " +
-          "All cluster seed nodes must have the same TLS setting."
-      )
+    inconsistent match {
+      case Some(uri) =>
+        // Determine which setting is inconsistent
+        if (first.useTls != uri.useTls) {
+          Left(
+            s"Inconsistent TLS settings: some URIs use TLS (rediss://) and others don't (redis://). " +
+              "All cluster seed nodes must have the same TLS setting."
+          )
+        } else {
+          Left(
+            "Inconsistent credentials: all cluster seed nodes must have the same authentication settings."
+          )
+        }
+      case None => Right(())
     }
-
-    // Check credentials consistency
-    val inconsistentCreds = configs.exists(_.credentials != first.credentials)
-    if (inconsistentCreds) {
-      return Left(
-        "Inconsistent credentials: all cluster seed nodes must have the same authentication settings."
-      )
-    }
-
-    // Check protocol version consistency
-    val inconsistentProtocol = configs.exists(_.protocolVersion != first.protocolVersion)
-    if (inconsistentProtocol) {
-      return Left(
-        s"Inconsistent protocol versions: all cluster seed nodes must use the same protocol version. " +
-          s"Found: ${configs.map(_.protocolVersion).distinct.mkString(", ")}"
-      )
-    }
-
-    // Use settings from first config (now validated to be consistent)
-    Right(
-      ValkeyClusterConfig(
-        addresses = allAddresses,
-        useTls = first.useTls,
-        requestTimeout = first.requestTimeout,
-        credentials = first.credentials,
-        readFrom = first.readFrom,
-        reconnectStrategy = first.reconnectStrategy,
-        clientName = first.clientName,
-        protocolVersion = first.protocolVersion
-      )
-    )
   }
 
   /** Builder-style constructor */

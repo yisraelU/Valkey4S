@@ -4,44 +4,11 @@
 
 ### Configuration API Completeness
 
-- [x] **Add `reconnectStrategy` to ValkeyClusterConfig** ✅
-  - Location: `modules/glide-core/src/main/scala/io/github/yisraelu/valkey4s/model/ValkeyClusterConfig.scala`
-  - GlideClusterClientConfiguration supports `reconnectStrategy()`
-  - Should match ValkeyClientConfig for consistency
-  - Add field, update copy/apply/unapply, add `withReconnectStrategy()` builder method
-  - Update `toGlide` to set `builder.reconnectStrategy()`
 
-- [x] **Add `protocolVersion` to ValkeyClusterConfig** ✅
-  - Location: `modules/glide-core/src/main/scala/io/github/yisraelu/valkey4s/model/ValkeyClusterConfig.scala`
-  - GlideClusterClientConfiguration supports `protocol()`
-  - Should match ValkeyClientConfig (defaults to RESP3)
-  - Add field, update copy/apply/unapply
-  - Update `toGlide` to set `builder.protocol()`
 
 ### API Consistency
-
-- [x] **Refactor `NodeAddress.toGlide` to instance method** ✅
-  - Location: `modules/glide-core/src/main/scala/io/github/yisraelu/valkey4s/model/NodeAddress.scala`
-  - Current: `NodeAddress.toGlide(addr)` (companion object method)
-  - Proposed: `addr.toGlide` (instance method)
-  - More idiomatic, matches pattern of ServerCredentials, ReadFromStrategy, etc.
-  - Update all call sites in ValkeyClientConfig and ValkeyClusterConfig
-
-- [ ] **Rename `withAddress` to `addAddress` in ValkeyClusterConfig**
-  - Location: `modules/glide-core/src/main/scala/io/github/yisraelu/valkey4s/model/ValkeyClusterConfig.scala:69-73`
-  - Current name is misleading (it appends, doesn't replace)
-  - ValkeyClientConfig has both `withAddress` (replace) and `addAddress` (append)
-  - Cluster config should only have `addAddress` since it always appends
-
-- [ ] **Add `withTlsEnabled` and `withTlsDisabled` to ValkeyClusterConfig**
-  - Location: `modules/glide-core/src/main/scala/io/github/yisraelu/valkey4s/model/ValkeyClusterConfig.scala`
-  - ValkeyClientConfig has these convenience methods
-  - Currently only has `withTls(enabled: Boolean)`
-  - Add for API consistency:
-    ```scala
-    def withTlsEnabled: ValkeyClusterConfig = copy(useTls = true)
-    def withTlsDisabled: ValkeyClusterConfig = copy(useTls = false)
-    ```
+  - missing  refreshTopologyFromInitialNodes from advancedcluster config
+  - ignore pubsub for now
 
 ### Code Quality
 

@@ -102,28 +102,28 @@ class ValkeyUriSuite extends FunSuite {
     val result = ValkeyUri.fromString("http://localhost:6379")
 
     assert(result.isLeft)
-    assert(result.swap.toOption.get.contains("Invalid scheme"))
+    assert(result.swap.toOption.get.getMessage.contains("Invalid scheme"))
   }
 
-  test("toUriString should round-trip simple URI") {
+  test("toURI should round-trip simple URI") {
     val original = "valkey://localhost:6379"
     val uri = ValkeyUri.fromString(original).toOption.get
 
-    assertEquals(uri.toUriString, original)
+    assertEquals(uri.toURI.toString, original)
   }
 
-  test("toUriString should round-trip URI with credentials") {
+  test("toURI should round-trip URI with credentials") {
     val original = "valkey://alice:secret@localhost:6379"
     val uri = ValkeyUri.fromString(original).toOption.get
 
-    assertEquals(uri.toUriString, original)
+    assertEquals(uri.toURI.toString, original)
   }
 
-  test("toUriString should round-trip URI with database") {
+  test("toURI should round-trip URI with database") {
     val original = "valkey://localhost:6379/2"
     val uri = ValkeyUri.fromString(original).toOption.get
 
-    assertEquals(uri.toUriString, original)
+    assertEquals(uri.toURI.toString, original)
   }
 
   test("ValkeyClientConfig.fromUri should create config from ValkeyUri") {
