@@ -1,6 +1,6 @@
 package io.github.yisraelu.valkey4s.algebra
 
-import io.github.yisraelu.valkey4s.model.SetOptions
+import io.github.yisraelu.valkey4s.arguments.SetOptions
 
 /** String/Key-Value command algebra */
 trait StringCommands[F[_], K, V] {

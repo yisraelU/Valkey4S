@@ -115,7 +115,7 @@ sealed abstract class ValkeyClusterConfig {
     if (connectionTimeout.isDefined || refreshTopologyFromInitialNodes.isDefined) {
       val advancedBuilder = G.AdvancedGlideClusterClientConfiguration.builder()
       connectionTimeout.foreach(timeout => advancedBuilder.connectionTimeout(timeout.toMillis.toInt))
-      refreshTopologyFromInitialNodes.foreach(advancedBuilder.refreshTopologyFromInitialNodes(_))
+      refreshTopologyFromInitialNodes.foreach(advancedBuilder.refreshTopologyFromInitialNodes)
       builder.advancedConfiguration(advancedBuilder.build())
     }
 

@@ -3,6 +3,7 @@ package io.github.yisraelu.valkey4s
 import cats.effect._
 import cats.syntax.all._
 import glide.api.BaseClient
+import io.github.yisraelu.valkey4s.arguments.{InsertPosition, SetOptions, ZAddOptions}
 import io.github.yisraelu.valkey4s.codec.Codec
 import io.github.yisraelu.valkey4s.connection.{
   ValkeyClient,
@@ -63,10 +64,10 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
       }
   }
 
-  override def set(key: K, value: V, options: io.github.yisraelu.valkey4s.model.SetOptions): F[Option[V]] = {
+  override def set(key: K, value: V, options: SetOptions): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
     val valueGS = valueCodec.encode(value)
-    val glideOptions = options.toGlide
+    val glideOptions = SetOptions.toGlide(options)
 
     Async[F]
       .fromCompletableFuture(
@@ -697,7 +698,7 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
       }
   }
 
-  override def linsert(key: K, position: model.InsertPosition, pivot: V, element: V): F[Long] = {
+  override def linsert(key: K, position: InsertPosition, pivot: V, element: V): F[Long] = {
     val keyGS = keyCodec.encode(key)
     val pivotGS = valueCodec.encode(pivot)
     val elementGS = valueCodec.encode(element)
@@ -1038,7 +1039,7 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
     }
   }
 
-  override def zadd(key: K, membersScores: Map[V, Double], options: model.ZAddOptions): F[Long] = {
+  override def zadd(key: K, membersScores: Map[V, Double], options: ZAddOptions): F[Long] = {
     if (membersScores.isEmpty) {
       Async[F].pure(0L)
     } else {
@@ -1046,7 +1047,7 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
       val javaMap = membersScores.map { case (member, score) =>
         valueCodec.encode(member) -> Double.box(score)
       }.asJava
-      val glideOptions = options.toGlide
+      val glideOptions = ZAddOptions.toGlide(options)
 
       Async[F]
         .fromCompletableFuture(

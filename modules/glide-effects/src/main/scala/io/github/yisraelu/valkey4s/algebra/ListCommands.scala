@@ -1,6 +1,6 @@
 package io.github.yisraelu.valkey4s.algebra
 
-import io.github.yisraelu.valkey4s.model.InsertPosition
+import io.github.yisraelu.valkey4s.arguments.InsertPosition
 
 /** List commands for Valkey/Redis
   *

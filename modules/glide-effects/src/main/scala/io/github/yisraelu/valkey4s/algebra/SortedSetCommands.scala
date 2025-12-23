@@ -1,6 +1,6 @@
 package io.github.yisraelu.valkey4s.algebra
 
-import io.github.yisraelu.valkey4s.model.{InsertPosition, RangeQuery, ZAddOptions}
+import io.github.yisraelu.valkey4s.arguments.ZAddOptions
 
 /** Sorted Set commands for Valkey/Redis
   *

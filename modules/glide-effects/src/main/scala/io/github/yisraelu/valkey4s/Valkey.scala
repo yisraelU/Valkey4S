@@ -136,7 +136,7 @@ object Valkey {
         seedUris: String*
     ): Resource[F, ValkeyCommands[F, String, String]] =
       for {
-        client <- MkValkey[F].clusterClientFromUris(seedUris: _*)
+        client <- MkValkey[F].clusterClientFromUris(seedUris *)
         tx <- MkValkey[F].txRunner
       } yield new ValkeyCluster[F, String, String](
         client,
@@ -159,7 +159,7 @@ object Valkey {
       vCodec: Codec[V]
     ): Resource[F, ValkeyCommands[F, K, V]] =
       for {
-        client <- MkValkey[F].clusterClientFromUris(seedUris: _*)
+        client <- MkValkey[F].clusterClientFromUris(seedUris *)
         tx <- MkValkey[F].txRunner
       } yield new ValkeyCluster[F, K, V](client, kCodec, vCodec, tx)
 
