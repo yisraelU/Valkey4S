@@ -1,7 +1,6 @@
 package io.github.yisraelu.valkey4s.model
 
 import cats.ApplicativeThrow
-import cats.syntax.all._
 import glide.api.models.{configuration => G}
 import scala.concurrent.duration.FiniteDuration
 
