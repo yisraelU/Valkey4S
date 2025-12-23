@@ -47,6 +47,9 @@ sealed abstract class ValkeyClusterConfig {
   /** Client availability zone for AZ-affinity reads */
   def clientAZ: Option[String]
 
+  /** Whether to refresh cluster topology from initial seed nodes (advanced) */
+  def refreshTopologyFromInitialNodes: Option[Boolean]
+
   /** Create a copy with modified fields */
   private[model] def copy(
       addresses: List[NodeAddress] = this.addresses,
@@ -61,7 +64,8 @@ sealed abstract class ValkeyClusterConfig {
       connectionTimeout: Option[FiniteDuration] = this.connectionTimeout,
       libName: Option[String] = this.libName,
       lazyConnect: Option[Boolean] = this.lazyConnect,
-      clientAZ: Option[String] = this.clientAZ
+      clientAZ: Option[String] = this.clientAZ,
+      refreshTopologyFromInitialNodes: Option[Boolean] = this.refreshTopologyFromInitialNodes
   ): ValkeyClusterConfig =
     ValkeyClusterConfig(
       addresses,
@@ -76,7 +80,8 @@ sealed abstract class ValkeyClusterConfig {
       connectionTimeout,
       libName,
       lazyConnect,
-      clientAZ
+      clientAZ,
+      refreshTopologyFromInitialNodes
     )
 
   /** Convert to Glide's GlideClusterClientConfiguration */
@@ -106,10 +111,11 @@ sealed abstract class ValkeyClusterConfig {
     lazyConnect.foreach(builder.lazyConnect)
     clientAZ.foreach(builder.clientAZ)
 
-    // Build advanced configuration if needed
-    connectionTimeout.foreach { timeout =>
+    // Build advanced configuration if any advanced settings are present
+    if (connectionTimeout.isDefined || refreshTopologyFromInitialNodes.isDefined) {
       val advancedBuilder = G.AdvancedGlideClusterClientConfiguration.builder()
-      advancedBuilder.connectionTimeout(timeout.toMillis.toInt)
+      connectionTimeout.foreach(timeout => advancedBuilder.connectionTimeout(timeout.toMillis.toInt))
+      refreshTopologyFromInitialNodes.foreach(advancedBuilder.refreshTopologyFromInitialNodes(_))
       builder.advancedConfiguration(advancedBuilder.build())
     }
 
@@ -237,6 +243,35 @@ sealed abstract class ValkeyClusterConfig {
     */
   def withClientAZ(az: String): ValkeyClusterConfig =
     copy(clientAZ = Some(az))
+
+  /** Enable refreshing cluster topology from initial seed nodes (advanced).
+    *
+    * When enabled, the client will periodically refresh the cluster topology
+    * by querying the initial seed nodes provided in the configuration,
+    * rather than relying solely on CLUSTER SLOTS responses from connected nodes.
+    *
+    * This can be useful in scenarios where cluster topology changes frequently
+    * or when you want to ensure the client always has an up-to-date view of the cluster.
+    *
+    * Example:
+    * {{{
+    * config.withRefreshTopologyFromInitialNodesEnabled
+    * }}}
+    */
+  def withRefreshTopologyFromInitialNodesEnabled: ValkeyClusterConfig =
+    copy(refreshTopologyFromInitialNodes = Some(true))
+
+  /** Disable refreshing cluster topology from initial seed nodes.
+    *
+    * The client will only update topology information from CLUSTER SLOTS responses.
+    *
+    * Example:
+    * {{{
+    * config.withRefreshTopologyFromInitialNodesDisabled
+    * }}}
+    */
+  def withRefreshTopologyFromInitialNodesDisabled: ValkeyClusterConfig =
+    copy(refreshTopologyFromInitialNodes = Some(false))
 }
 
 object ValkeyClusterConfig {
@@ -254,7 +289,8 @@ object ValkeyClusterConfig {
       connectionTimeout: Option[FiniteDuration] = None,
       libName: Option[String] = None,
       lazyConnect: Option[Boolean] = None,
-      clientAZ: Option[String] = None
+      clientAZ: Option[String] = None,
+      refreshTopologyFromInitialNodes: Option[Boolean] = None
   ) extends ValkeyClusterConfig {
     require(
       addresses.nonEmpty,
@@ -276,7 +312,8 @@ object ValkeyClusterConfig {
       connectionTimeout: Option[FiniteDuration] = None,
       libName: Option[String] = None,
       lazyConnect: Option[Boolean] = None,
-      clientAZ: Option[String] = None
+      clientAZ: Option[String] = None,
+      refreshTopologyFromInitialNodes: Option[Boolean] = None
   ): ValkeyClusterConfig =
     ValkeyClusterConfigImpl(
       addresses,
@@ -291,7 +328,8 @@ object ValkeyClusterConfig {
       connectionTimeout,
       libName,
       lazyConnect,
-      clientAZ
+      clientAZ,
+      refreshTopologyFromInitialNodes
     )
 
   /** Pattern matching support */
@@ -309,7 +347,8 @@ object ValkeyClusterConfig {
         Option[FiniteDuration],
         Option[String],
         Option[Boolean],
-        Option[String]
+        Option[String],
+        Option[Boolean]
     )
   ] =
     Some(
@@ -326,7 +365,8 @@ object ValkeyClusterConfig {
         config.connectionTimeout,
         config.libName,
         config.lazyConnect,
-        config.clientAZ
+        config.clientAZ,
+        config.refreshTopologyFromInitialNodes
       )
     )
 

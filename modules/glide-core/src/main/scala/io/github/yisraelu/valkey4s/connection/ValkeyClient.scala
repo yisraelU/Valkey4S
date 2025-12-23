@@ -1,10 +1,10 @@
 package io.github.yisraelu.valkey4s.connection
 
-import cats.effect._
-import cats.syntax.all._
+import cats.effect.*
+import cats.syntax.all.*
 import glide.api.GlideClient
 import io.github.yisraelu.valkey4s.effect.Log
-import io.github.yisraelu.valkey4s.model.ValkeyClientConfig
+import io.github.yisraelu.valkey4s.model.{ValkeyClientConfig, ValkeyUri}
 
 /** Wrapper around Glide's standalone client with functional resource management
   *
@@ -62,11 +62,16 @@ object ValkeyClient {
     * @param uri The connection URI
     * @return Resource managing the client
     */
-  def fromUri[F[_]: Async: Log](uri: String): Resource[F, ValkeyClient[F]] =
-    Resource
-      .eval(ValkeyClientConfig.fromUri[F](uri))
-      .flatMap(fromConfig[F])
+  def fromUri[F[_]: Async: Log](uri: ValkeyUri): Resource[F, ValkeyClient[F]] =
+    {
+      val config = ValkeyClientConfig.fromUri(uri)
+      fromConfig[F](config)
+    }
 
+  def fromUri[F[_]: Async: Log](uri: String): Resource[F, ValkeyClient[F]] =
+  {
+    Resource.eval(ValkeyClientConfig.fromUri(uri)).flatMap(fromConfig[F])
+  }
   /** Convenience constructor for localhost with defaults */
   def localhost[F[_]: Async: Log]: Resource[F, ValkeyClient[F]] =
     fromConfig(ValkeyClientConfig.localhost)

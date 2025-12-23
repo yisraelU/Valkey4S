@@ -84,9 +84,9 @@ lazy val core = (projectMatrix in file("modules/glide-core"))
       "org.typelevel" %% "cats-effect" % "3.6.3",
       "org.typelevel" %% "literally" % "1.2.0",
 // Test dependencies
-      "org.scalameta" %% "munit" % "1.0.0" % Test,
-      "org.typelevel" %% "munit-cats-effect" % "2.0.0" % Test,
-      "org.testcontainers" % "testcontainers" % "1.19.3" % Test,
+      "org.scalameta" %% "munit" % "1.2.1" % Test,
+      "org.typelevel" %% "munit-cats-effect" % "2.1.0" % Test,
+      "org.testcontainers" % "testcontainers" % "2.0.3" % Test,
     ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 13)) => Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value)
       case _ => Seq.empty

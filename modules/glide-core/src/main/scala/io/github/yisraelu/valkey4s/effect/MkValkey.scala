@@ -1,14 +1,8 @@
 package io.github.yisraelu.valkey4s.effect
 
-import cats.effect._
-import io.github.yisraelu.valkey4s.connection.{
-  ValkeyClient,
-  ValkeyClusterClient
-}
-import io.github.yisraelu.valkey4s.model.{
-  ValkeyClientConfig,
-  ValkeyClusterConfig
-}
+import cats.effect.*
+import io.github.yisraelu.valkey4s.connection.{ValkeyClient, ValkeyClusterClient}
+import io.github.yisraelu.valkey4s.model.{ValkeyClientConfig, ValkeyClusterConfig, ValkeyUri}
 
 import scala.annotation.implicitNotFound
 
@@ -26,6 +20,8 @@ import scala.annotation.implicitNotFound
 sealed trait MkValkey[F[_]] {
 
   /** Create standalone client from URI */
+  def clientFromUri(uri: ValkeyUri): Resource[F, ValkeyClient[F]]
+
   def clientFromUri(uri: String): Resource[F, ValkeyClient[F]]
 
   /** Create standalone client from config */
@@ -36,8 +32,10 @@ sealed trait MkValkey[F[_]] {
       config: ValkeyClusterConfig
   ): Resource[F, ValkeyClusterClient[F]]
 
-  /** Create cluster client from URIs */
-  def clusterClientFromUris(uris: String*): Resource[F, ValkeyClusterClient[F]]
+  /** Create cluster client from URI strings */
+  def clusterClientFromUris(
+      uris: String*
+  ): Resource[F, ValkeyClusterClient[F]]
 
   /** Transaction runner (stub for Phase 1, full implementation in Phase 3) */
   private[valkey4s] def txRunner: Resource[F, TxRunner[F]]
@@ -57,6 +55,8 @@ object MkValkey {
     def clientFromUri(uri: String): Resource[F, ValkeyClient[F]] =
       ValkeyClient.fromUri[F](uri)
 
+    def clientFromUri(uri: ValkeyUri): Resource[F, ValkeyClient[F]] = ValkeyClient.fromUri[F](uri)
+
     def clientFromConfig(
         config: ValkeyClientConfig
     ): Resource[F, ValkeyClient[F]] =
@@ -71,6 +71,7 @@ object MkValkey {
         uris: String*
     ): Resource[F, ValkeyClusterClient[F]] =
       ValkeyClusterClient.fromUris[F](uris*)
+
 
     private[valkey4s] def txRunner: Resource[F, TxRunner[F]] =
       Resource.eval(TxRunner.make[F])

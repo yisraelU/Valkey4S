@@ -1,5 +1,7 @@
 package io.github.yisraelu.valkey4s.algebra
 
+import io.github.yisraelu.valkey4s.model.SetOptions
+
 /** String/Key-Value command algebra */
 trait StringCommands[F[_], K, V] {
 
@@ -16,6 +18,15 @@ trait StringCommands[F[_], K, V] {
     * @param value The value to set
     */
   def set(key: K, value: V): F[Unit]
+
+  /** Set the value of a key with options
+    *
+    * @param key The key to set
+    * @param value The value to set
+    * @param options Set options (expiry, conditional set, etc.)
+    * @return Some(oldValue) if returnOldValue was set, None otherwise
+    */
+  def set(key: K, value: V, options: SetOptions): F[Option[V]]
 
   /** Get multiple values by keys
     *

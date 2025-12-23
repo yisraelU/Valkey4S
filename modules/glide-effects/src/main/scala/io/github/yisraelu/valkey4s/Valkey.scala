@@ -1,16 +1,10 @@
 package io.github.yisraelu.valkey4s
 
-import cats.effect._
+import cats.effect.*
 import io.github.yisraelu.valkey4s.codec.Codec
-import io.github.yisraelu.valkey4s.connection.{
-  ValkeyClient,
-  ValkeyClusterClient
-}
+import io.github.yisraelu.valkey4s.connection.{ValkeyClient, ValkeyClusterClient}
 import io.github.yisraelu.valkey4s.effect.{Log, MkValkey}
-import io.github.yisraelu.valkey4s.model.{
-  ValkeyClientConfig,
-  ValkeyClusterConfig
-}
+import io.github.yisraelu.valkey4s.model.{ValkeyClientConfig, ValkeyClusterConfig, ValkeyUri}
 
 /** Main entry point for Valkey4S
   *
@@ -55,6 +49,16 @@ object Valkey {
         tx
       )
 
+    def utf8(valkeyUri: ValkeyUri): Resource[F, ValkeyCommands[F, String, String]] =
+      for {
+        client <- MkValkey[F].clientFromUri(valkeyUri)
+        tx <- MkValkey[F].txRunner
+      } yield new ValkeyStandalone[F, String, String](
+        client,
+        Codec.utf8Codec,
+        Codec.utf8Codec,
+        tx
+      )
     /** Create a connection with custom codecs from URI
       *
       * @param uri The connection URI
