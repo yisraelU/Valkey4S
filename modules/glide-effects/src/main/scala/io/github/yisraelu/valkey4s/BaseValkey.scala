@@ -697,6 +697,23 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
       }
   }
 
+  override def linsert(key: K, position: model.InsertPosition, pivot: V, element: V): F[Long] = {
+    val keyGS = keyCodec.encode(key)
+    val pivotGS = valueCodec.encode(pivot)
+    val elementGS = valueCodec.encode(element)
+    val glidePosition = position.toGlide
+
+    Async[F]
+      .fromCompletableFuture(
+        Async[F].delay(baseClient.linsert(keyGS, glidePosition, pivotGS, elementGS))
+      )
+      .map(_.longValue())
+      .handleErrorWith { err =>
+        Log[F].error(s"Error in LINSERT $key: ${err.getMessage}") *>
+          Async[F].raiseError(err)
+      }
+  }
+
   override def lpos(key: K, element: V): F[Option[Long]] = {
     val keyGS = keyCodec.encode(key)
     val elementGS = valueCodec.encode(element)
@@ -1016,6 +1033,28 @@ private[valkey4s] abstract class BaseValkey[F[_]: Async: Log, K, V](
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in ZADD $key: ${err.getMessage}") *>
+            Async[F].raiseError(err)
+        }
+    }
+  }
+
+  override def zadd(key: K, membersScores: Map[V, Double], options: model.ZAddOptions): F[Long] = {
+    if (membersScores.isEmpty) {
+      Async[F].pure(0L)
+    } else {
+      val keyGS = keyCodec.encode(key)
+      val javaMap = membersScores.map { case (member, score) =>
+        valueCodec.encode(member) -> Double.box(score)
+      }.asJava
+      val glideOptions = options.toGlide
+
+      Async[F]
+        .fromCompletableFuture(
+          Async[F].delay(baseClient.zadd(keyGS, javaMap, glideOptions))
+        )
+        .map(_.longValue())
+        .handleErrorWith { err =>
+          Log[F].error(s"Error in ZADD $key (with options): ${err.getMessage}") *>
             Async[F].raiseError(err)
         }
     }

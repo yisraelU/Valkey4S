@@ -1,5 +1,7 @@
 package io.github.yisraelu.valkey4s.algebra
 
+import io.github.yisraelu.valkey4s.model.InsertPosition
+
 /** List commands for Valkey/Redis
   *
   * Lists are simple collections of string elements sorted by insertion order.
@@ -121,6 +123,16 @@ trait ListCommands[F[_], K, V] {
     * @return The length of the list after the insert operation, or -1 when pivot not found
     */
   def linsert(key: K, before: Boolean, pivot: V, element: V): F[Long]
+
+  /** Insert element in the list stored at key either before or after the reference value pivot.
+    *
+    * @param key The key of the list
+    * @param position Insert position (Before or After)
+    * @param pivot The reference value
+    * @param element The element to insert
+    * @return The length of the list after the insert operation, or -1 when pivot not found
+    */
+  def linsert(key: K, position: InsertPosition, pivot: V, element: V): F[Long]
 
   /** Return the index of the first occurrence of element in the list.
     *

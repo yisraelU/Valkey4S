@@ -1,5 +1,7 @@
 package io.github.yisraelu.valkey4s.algebra
 
+import io.github.yisraelu.valkey4s.model.{InsertPosition, RangeQuery, ZAddOptions}
+
 /** Sorted Set commands for Valkey/Redis
   *
   * Sorted sets are collections of unique string elements where each element
@@ -14,6 +16,15 @@ trait SortedSetCommands[F[_], K, V] {
     * @return The number of elements added to the sorted set (not including updates)
     */
   def zadd(key: K, membersScores: Map[V, Double]): F[Long]
+
+  /** Add one or more members to a sorted set with options
+    *
+    * @param key The key of the sorted set
+    * @param membersScores Map of members to scores
+    * @param options ZADD options (NX, XX, GT, LT, CH)
+    * @return The number of elements added/changed depending on options
+    */
+  def zadd(key: K, membersScores: Map[V, Double], options: ZAddOptions): F[Long]
 
   /** Remove one or more members from a sorted set
     *
