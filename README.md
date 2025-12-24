@@ -40,9 +40,6 @@ object QuickStart extends IOApp.Simple:
 
 If you like it, give it a ⭐ ! If you think we could do better, please [let us know](https://gitter.im/profunktor-dev/valkey4cats)!
 
-### Versions
-
-The `1.x.x` series is built on Cats Effect 3 whereas the `0.x.x` series is built on Cats Effect 2.
 
 ### Dependencies
 
