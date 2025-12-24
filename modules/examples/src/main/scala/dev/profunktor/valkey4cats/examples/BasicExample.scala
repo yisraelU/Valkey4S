@@ -1,6 +1,6 @@
 package dev.profunktor.valkey4cats.examples
 
-import cats.effect._
+import cats.effect.*
 import dev.profunktor.valkey4cats.Valkey
 import dev.profunktor.valkey4cats.effect.Log
 

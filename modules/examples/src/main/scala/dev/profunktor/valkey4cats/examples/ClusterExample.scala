@@ -1,11 +1,12 @@
 package dev.profunktor.valkey4cats.examples
 
-import cats.effect._
+import cats.effect.*
 import dev.profunktor.valkey4cats.Valkey
 import dev.profunktor.valkey4cats.codec.Codec.utf8Codec
 import dev.profunktor.valkey4cats.effect.Log
-import dev.profunktor.valkey4cats.model._
-import scala.concurrent.duration._
+import dev.profunktor.valkey4cats.model.*
+
+import scala.concurrent.duration.*
 
 /** Cluster configuration example
   *
