@@ -1,6 +1,7 @@
 package dev.profunktor.valkey4cats.algebra
 
 import dev.profunktor.valkey4cats.arguments.ZAddOptions
+import dev.profunktor.valkey4cats.model.ValkeyResponse
 
 /** Sorted Set commands for Valkey/Redis
   *
@@ -15,7 +16,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param membersScores Map of members to scores
     * @return The number of elements added to the sorted set (not including updates)
     */
-  def zadd(key: K, membersScores: Map[V, Double]): F[Long]
+  def zadd(key: K, membersScores: Map[V, Double]): F[ValkeyResponse[Long]]
 
   /** Add one or more members to a sorted set with options
     *
@@ -24,7 +25,11 @@ trait SortedSetCommands[F[_], K, V] {
     * @param options ZADD options (NX, XX, GT, LT, CH)
     * @return The number of elements added/changed depending on options
     */
-  def zadd(key: K, membersScores: Map[V, Double], options: ZAddOptions): F[Long]
+  def zadd(
+      key: K,
+      membersScores: Map[V, Double],
+      options: ZAddOptions
+  ): F[ValkeyResponse[Long]]
 
   /** Remove one or more members from a sorted set
     *
@@ -32,7 +37,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param members Members to remove
     * @return The number of members removed from the sorted set
     */
-  def zrem(key: K, members: V*): F[Long]
+  def zrem(key: K, members: V*): F[ValkeyResponse[Long]]
 
   /** Get the specified range of elements in a sorted set by index.
     * Both start and stop are zero-based indexes.
@@ -42,7 +47,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param stop Stop index (inclusive)
     * @return List of elements in the specified range
     */
-  def zrange(key: K, start: Long, stop: Long): F[List[V]]
+  def zrange(key: K, start: Long, stop: Long): F[ValkeyResponse[List[V]]]
 
   /** Get the specified range of elements with scores in a sorted set by index.
     * Both start and stop are zero-based indexes.
@@ -52,7 +57,11 @@ trait SortedSetCommands[F[_], K, V] {
     * @param stop Stop index (inclusive)
     * @return List of (element, score) pairs in the specified range
     */
-  def zrangeWithScores(key: K, start: Long, stop: Long): F[List[(V, Double)]]
+  def zrangeWithScores(
+      key: K,
+      start: Long,
+      stop: Long
+  ): F[ValkeyResponse[List[(V, Double)]]]
 
   /** Get the score associated with a member in a sorted set
     *
@@ -60,7 +69,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param member The member
     * @return The score of the member, or None if member doesn't exist
     */
-  def zscore(key: K, member: V): F[Option[Double]]
+  def zscore(key: K, member: V): F[ValkeyResponse[Option[Double]]]
 
   /** Get the scores associated with multiple members in a sorted set
     *
@@ -68,14 +77,14 @@ trait SortedSetCommands[F[_], K, V] {
     * @param members The members
     * @return List of scores (None for members that don't exist)
     */
-  def zmscore(key: K, members: V*): F[List[Option[Double]]]
+  def zmscore(key: K, members: V*): F[ValkeyResponse[List[Option[Double]]]]
 
   /** Get the number of members in a sorted set
     *
     * @param key The key of the sorted set
     * @return The cardinality (number of elements) of the sorted set
     */
-  def zcard(key: K): F[Long]
+  def zcard(key: K): F[ValkeyResponse[Long]]
 
   /** Get the rank of member in the sorted set (ascending order, 0-based)
     *
@@ -83,7 +92,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param member The member
     * @return The rank of the member, or None if member doesn't exist
     */
-  def zrank(key: K, member: V): F[Option[Long]]
+  def zrank(key: K, member: V): F[ValkeyResponse[Option[Long]]]
 
   /** Get the rank of member in the sorted set (descending order, 0-based)
     *
@@ -91,7 +100,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param member The member
     * @return The rank of the member, or None if member doesn't exist
     */
-  def zrevrank(key: K, member: V): F[Option[Long]]
+  def zrevrank(key: K, member: V): F[ValkeyResponse[Option[Long]]]
 
   /** Increment the score of a member in a sorted set
     *
@@ -100,7 +109,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param member The member
     * @return The new score of the member
     */
-  def zincrby(key: K, increment: Double, member: V): F[Double]
+  def zincrby(key: K, increment: Double, member: V): F[ValkeyResponse[Double]]
 
   /** Count the members in a sorted set with scores within the given range
     *
@@ -109,14 +118,14 @@ trait SortedSetCommands[F[_], K, V] {
     * @param max Maximum score (inclusive)
     * @return The number of elements in the specified score range
     */
-  def zcount(key: K, min: Double, max: Double): F[Long]
+  def zcount(key: K, min: Double, max: Double): F[ValkeyResponse[Long]]
 
   /** Remove and return the member with the lowest score from a sorted set
     *
     * @param key The key of the sorted set
     * @return The removed (member, score) pair, or None if the sorted set is empty
     */
-  def zpopmin(key: K): F[Option[(V, Double)]]
+  def zpopmin(key: K): F[ValkeyResponse[Option[(V, Double)]]]
 
   /** Remove and return up to count members with the lowest scores from a sorted set
     *
@@ -124,14 +133,14 @@ trait SortedSetCommands[F[_], K, V] {
     * @param count The number of members to pop
     * @return List of removed (member, score) pairs
     */
-  def zpopminCount(key: K, count: Long): F[List[(V, Double)]]
+  def zpopminCount(key: K, count: Long): F[ValkeyResponse[List[(V, Double)]]]
 
   /** Remove and return the member with the highest score from a sorted set
     *
     * @param key The key of the sorted set
     * @return The removed (member, score) pair, or None if the sorted set is empty
     */
-  def zpopmax(key: K): F[Option[(V, Double)]]
+  def zpopmax(key: K): F[ValkeyResponse[Option[(V, Double)]]]
 
   /** Remove and return up to count members with the highest scores from a sorted set
     *
@@ -139,14 +148,14 @@ trait SortedSetCommands[F[_], K, V] {
     * @param count The number of members to pop
     * @return List of removed (member, score) pairs
     */
-  def zpopmaxCount(key: K, count: Long): F[List[(V, Double)]]
+  def zpopmaxCount(key: K, count: Long): F[ValkeyResponse[List[(V, Double)]]]
 
   /** Get one random member from a sorted set
     *
     * @param key The key of the sorted set
     * @return A random member, or None if the sorted set is empty
     */
-  def zrandmember(key: K): F[Option[V]]
+  def zrandmember(key: K): F[ValkeyResponse[Option[V]]]
 
   /** Get one or more random members from a sorted set
     *
@@ -154,7 +163,7 @@ trait SortedSetCommands[F[_], K, V] {
     * @param count The number of members to return
     * @return List of random members
     */
-  def zrandmemberCount(key: K, count: Long): F[List[V]]
+  def zrandmemberCount(key: K, count: Long): F[ValkeyResponse[List[V]]]
 
   /** Get one or more random members with scores from a sorted set
     *
@@ -162,5 +171,8 @@ trait SortedSetCommands[F[_], K, V] {
     * @param count The number of members to return
     * @return List of random (member, score) pairs
     */
-  def zrandmemberWithScores(key: K, count: Long): F[List[(V, Double)]]
+  def zrandmemberWithScores(
+      key: K,
+      count: Long
+  ): F[ValkeyResponse[List[(V, Double)]]]
 }

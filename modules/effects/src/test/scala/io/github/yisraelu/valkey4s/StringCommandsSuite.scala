@@ -1,12 +1,15 @@
 package dev.profunktor.valkey4cats
 
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
+
 class StringCommandsSuite extends ValkeyTestSuite {
 
   test("GET should return None for non-existent key") {
     valkeyClient.use { valkey =>
       for {
         result <- valkey.get("non-existent-key")
-      } yield assertEquals(result, None)
+      } yield assertEquals(result, Ok(None))
     }
   }
 
@@ -16,7 +19,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("test-key", "test-value")
         result <- valkey.get("test-key")
         _ <- valkey.del("test-key") // Cleanup
-      } yield assertEquals(result, Some("test-value"))
+      } yield assertEquals(result, Ok(Some("test-value")))
     }
   }
 
@@ -26,7 +29,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("utf8-key", "Hello 世界 🌍")
         result <- valkey.get("utf8-key")
         _ <- valkey.del("utf8-key")
-      } yield assertEquals(result, Some("Hello 世界 🌍"))
+      } yield assertEquals(result, Ok(Some("Hello 世界 🌍")))
     }
   }
 
@@ -37,7 +40,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("overwrite-key", "updated")
         result <- valkey.get("overwrite-key")
         _ <- valkey.del("overwrite-key")
-      } yield assertEquals(result, Some("updated"))
+      } yield assertEquals(result, Ok(Some("updated")))
     }
   }
 
@@ -50,10 +53,11 @@ class StringCommandsSuite extends ValkeyTestSuite {
         result <- valkey.mGet(Set("key1", "key2", "key3"))
         _ <- valkey.del("key1", "key2", "key3")
       } yield {
-        assertEquals(result.size, 3)
-        assertEquals(result("key1"), "value1")
-        assertEquals(result("key2"), "value2")
-        assertEquals(result("key3"), "value3")
+        val Ok(m) = result: @unchecked
+        assertEquals(m.size, 3)
+        assertEquals(m("key1"), "value1")
+        assertEquals(m("key2"), "value2")
+        assertEquals(m("key3"), "value3")
       }
     }
   }
@@ -65,9 +69,10 @@ class StringCommandsSuite extends ValkeyTestSuite {
         result <- valkey.mGet(Set("exists", "does-not-exist"))
         _ <- valkey.del("exists")
       } yield {
-        assertEquals(result.size, 1)
-        assertEquals(result.get("exists"), Some("value"))
-        assertEquals(result.get("does-not-exist"), None)
+        val Ok(m) = result: @unchecked
+        assertEquals(m.size, 1)
+        assertEquals(m.get("exists"), Some("value"))
+        assertEquals(m.get("does-not-exist"), None)
       }
     }
   }
@@ -81,9 +86,9 @@ class StringCommandsSuite extends ValkeyTestSuite {
         v3 <- valkey.get("mset3")
         _ <- valkey.del("mset1", "mset2", "mset3")
       } yield {
-        assertEquals(v1, Some("v1"))
-        assertEquals(v2, Some("v2"))
-        assertEquals(v3, Some("v3"))
+        assertEquals(v1, Ok(Some("v1")))
+        assertEquals(v2, Ok(Some("v2")))
+        assertEquals(v3, Ok(Some("v3")))
       }
     }
   }
@@ -94,7 +99,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("counter", "10")
         result <- valkey.incr("counter")
         _ <- valkey.del("counter")
-      } yield assertEquals(result, 11L)
+      } yield assertEquals(result, Ok(11L))
     }
   }
 
@@ -103,7 +108,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
       for {
         result <- valkey.incr("new-counter")
         _ <- valkey.del("new-counter")
-      } yield assertEquals(result, 1L)
+      } yield assertEquals(result, Ok(1L))
     }
   }
 
@@ -113,7 +118,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("incrby-test", "100")
         result <- valkey.incrBy("incrby-test", 50)
         _ <- valkey.del("incrby-test")
-      } yield assertEquals(result, 150L)
+      } yield assertEquals(result, Ok(150L))
     }
   }
 
@@ -123,7 +128,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("decr-test", "10")
         result <- valkey.decr("decr-test")
         _ <- valkey.del("decr-test")
-      } yield assertEquals(result, 9L)
+      } yield assertEquals(result, Ok(9L))
     }
   }
 
@@ -133,7 +138,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("decrby-test", "100")
         result <- valkey.decrBy("decrby-test", 30)
         _ <- valkey.del("decrby-test")
-      } yield assertEquals(result, 70L)
+      } yield assertEquals(result, Ok(70L))
     }
   }
 
@@ -145,8 +150,8 @@ class StringCommandsSuite extends ValkeyTestSuite {
         result <- valkey.get("append-test")
         _ <- valkey.del("append-test")
       } yield {
-        assertEquals(length, 11L) // "Hello World".length
-        assertEquals(result, Some("Hello World"))
+        assertEquals(length, Ok(11L)) // "Hello World".length
+        assertEquals(result, Ok(Some("Hello World")))
       }
     }
   }
@@ -158,8 +163,8 @@ class StringCommandsSuite extends ValkeyTestSuite {
         result <- valkey.get("new-append")
         _ <- valkey.del("new-append")
       } yield {
-        assertEquals(length, 7L)
-        assertEquals(result, Some("Created"))
+        assertEquals(length, Ok(7L))
+        assertEquals(result, Ok(Some("Created")))
       }
     }
   }
@@ -170,7 +175,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("strlen-test", "Hello")
         length <- valkey.strlen("strlen-test")
         _ <- valkey.del("strlen-test")
-      } yield assertEquals(length, 5L)
+      } yield assertEquals(length, Ok(5L))
     }
   }
 
@@ -178,7 +183,7 @@ class StringCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         length <- valkey.strlen("does-not-exist")
-      } yield assertEquals(length, 0L)
+      } yield assertEquals(length, Ok(0L))
     }
   }
 
@@ -199,10 +204,10 @@ class StringCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("workflow-counter")
       } yield {
-        assertEquals(c1, 1L)
-        assertEquals(c2, 11L)
-        assertEquals(c3, 12L)
-        assertEquals(finalValue, Some("12"))
+        assertEquals(c1, Ok(1L))
+        assertEquals(c2, Ok(11L))
+        assertEquals(c3, Ok(12L))
+        assertEquals(finalValue, Ok(Some("12")))
       }
     }
   }

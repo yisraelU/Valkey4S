@@ -1,6 +1,8 @@
 package dev.profunktor.valkey4cats
 
 import cats.effect.IO
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
 
 class KeyCommandsSuite extends ValkeyTestSuite {
 
@@ -11,8 +13,8 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         deleted <- valkey.del("del-test")
         result <- valkey.get("del-test")
       } yield {
-        assertEquals(deleted, 1L)
-        assertEquals(result, None)
+        assertEquals(deleted, Ok(1L))
+        assertEquals(result, Ok(None))
       }
     }
   }
@@ -24,7 +26,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("del2", "v2")
         _ <- valkey.set("del3", "v3")
         deleted <- valkey.del("del1", "del2", "del3")
-      } yield assertEquals(deleted, 3L)
+      } yield assertEquals(deleted, Ok(3L))
     }
   }
 
@@ -32,7 +34,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         deleted <- valkey.del("does-not-exist")
-      } yield assertEquals(deleted, 0L)
+      } yield assertEquals(deleted, Ok(0L))
     }
   }
 
@@ -41,7 +43,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
       for {
         _ <- valkey.set("exists", "value")
         deleted <- valkey.del("exists", "does-not-exist")
-      } yield assertEquals(deleted, 1L)
+      } yield assertEquals(deleted, Ok(1L))
     }
   }
 
@@ -51,7 +53,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("exists-test", "value")
         exists <- valkey.exists("exists-test")
         _ <- valkey.del("exists-test")
-      } yield assertEquals(exists, true)
+      } yield assertEquals(exists, Ok(true))
     }
   }
 
@@ -59,7 +61,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         exists <- valkey.exists("does-not-exist")
-      } yield assertEquals(exists, false)
+      } yield assertEquals(exists, Ok(false))
     }
   }
 
@@ -70,7 +72,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.set("key2", "v2")
         count <- valkey.existsMany("key1", "key2", "key3")
         _ <- valkey.del("key1", "key2")
-      } yield assertEquals(count, 2L)
+      } yield assertEquals(count, Ok(2L))
     }
   }
 
@@ -78,7 +80,7 @@ class KeyCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         count <- valkey.existsMany("none1", "none2", "none3")
-      } yield assertEquals(count, 0L)
+      } yield assertEquals(count, Ok(0L))
     }
   }
 
@@ -105,12 +107,12 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("wf1", "wf3")
       } yield {
-        assertEquals(count1, 3L)
-        assertEquals(deleted, 1L)
-        assertEquals(count2, 2L)
-        assertEquals(exists1, true)
-        assertEquals(exists2, false)
-        assertEquals(exists3, true)
+        assertEquals(count1, Ok(3L))
+        assertEquals(deleted, Ok(1L))
+        assertEquals(count2, Ok(2L))
+        assertEquals(exists1, Ok(true))
+        assertEquals(exists2, Ok(false))
+        assertEquals(exists3, Ok(true))
       }
     }
   }
@@ -132,9 +134,9 @@ class KeyCommandsSuite extends ValkeyTestSuite {
         // Verify deletion
         count2 <- valkey.existsMany((1 to 100).map(i => s"stress-$i"): _*)
       } yield {
-        assertEquals(count1, 100L)
-        assertEquals(deleted, 100L)
-        assertEquals(count2, 0L)
+        assertEquals(count1, Ok(100L))
+        assertEquals(deleted, Ok(100L))
+        assertEquals(count2, Ok(0L))
       }
     }
   }

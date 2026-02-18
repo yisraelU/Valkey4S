@@ -1,5 +1,8 @@
 package dev.profunktor.valkey4cats
 
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
+
 class SetCommandsSuite extends ValkeyTestSuite {
 
   test("SADD should add members to set") {
@@ -9,8 +12,8 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set1")
         _ <- valkey.del("set1")
       } yield {
-        assertEquals(count, 3L)
-        assertEquals(members, Set("a", "b", "c"))
+        assertEquals(count, Ok(3L))
+        assertEquals(members, Ok(Set("a", "b", "c")))
       }
     }
   }
@@ -23,9 +26,9 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set2")
         _ <- valkey.del("set2")
       } yield {
-        assertEquals(count1, 3L)
-        assertEquals(count2, 1L) // Only d is new
-        assertEquals(members, Set("a", "b", "c", "d"))
+        assertEquals(count1, Ok(3L))
+        assertEquals(count2, Ok(1L)) // Only d is new
+        assertEquals(members, Ok(Set("a", "b", "c", "d")))
       }
     }
   }
@@ -38,8 +41,8 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set3")
         _ <- valkey.del("set3")
       } yield {
-        assertEquals(count, 2L)
-        assertEquals(members, Set("a", "c", "e"))
+        assertEquals(count, Ok(2L))
+        assertEquals(members, Ok(Set("a", "c", "e")))
       }
     }
   }
@@ -50,7 +53,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.sadd("set4", "a", "b", "c")
         count <- valkey.srem("set4", "x", "y", "z")
         _ <- valkey.del("set4")
-      } yield assertEquals(count, 0L)
+      } yield assertEquals(count, Ok(0L))
     }
   }
 
@@ -61,7 +64,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set5")
         _ <- valkey.del("set5")
       } yield {
-        assertEquals(members, Set("apple", "banana", "cherry"))
+        assertEquals(members, Ok(Set("apple", "banana", "cherry")))
       }
     }
   }
@@ -70,7 +73,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         members <- valkey.smembers("non-existent")
-      } yield assertEquals(members, Set.empty[String])
+      } yield assertEquals(members, Ok(Set.empty[String]))
     }
   }
 
@@ -80,7 +83,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.sadd("set6", "a", "b", "c")
         isMember <- valkey.sismember("set6", "b")
         _ <- valkey.del("set6")
-      } yield assertEquals(isMember, true)
+      } yield assertEquals(isMember, Ok(true))
     }
   }
 
@@ -90,7 +93,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.sadd("set7", "a", "b", "c")
         isMember <- valkey.sismember("set7", "x")
         _ <- valkey.del("set7")
-      } yield assertEquals(isMember, false)
+      } yield assertEquals(isMember, Ok(false))
     }
   }
 
@@ -101,7 +104,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         results <- valkey.smismember("set8", "a", "x", "c", "y")
         _ <- valkey.del("set8")
       } yield {
-        assertEquals(results, List(true, false, true, false))
+        assertEquals(results, Ok(List(true, false, true, false)))
       }
     }
   }
@@ -112,7 +115,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.sadd("set9", "a", "b", "c", "d", "e")
         cardinality <- valkey.scard("set9")
         _ <- valkey.del("set9")
-      } yield assertEquals(cardinality, 5L)
+      } yield assertEquals(cardinality, Ok(5L))
     }
   }
 
@@ -120,7 +123,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         cardinality <- valkey.scard("non-existent")
-      } yield assertEquals(cardinality, 0L)
+      } yield assertEquals(cardinality, Ok(0L))
     }
   }
 
@@ -133,7 +136,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         union <- valkey.sunion("set10a", "set10b", "set10c")
         _ <- valkey.del("set10a", "set10b", "set10c")
       } yield {
-        assertEquals(union, Set("a", "b", "c", "d", "e", "f", "g"))
+        assertEquals(union, Ok(Set("a", "b", "c", "d", "e", "f", "g")))
       }
     }
   }
@@ -147,8 +150,8 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set11dest")
         _ <- valkey.del("set11a", "set11b", "set11dest")
       } yield {
-        assertEquals(count, 5L)
-        assertEquals(members, Set("a", "b", "c", "d", "e"))
+        assertEquals(count, Ok(5L))
+        assertEquals(members, Ok(Set("a", "b", "c", "d", "e")))
       }
     }
   }
@@ -162,7 +165,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         intersection <- valkey.sinter("set12a", "set12b", "set12c")
         _ <- valkey.del("set12a", "set12b", "set12c")
       } yield {
-        assertEquals(intersection, Set("c", "d"))
+        assertEquals(intersection, Ok(Set("c", "d")))
       }
     }
   }
@@ -176,8 +179,8 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set13dest")
         _ <- valkey.del("set13a", "set13b", "set13dest")
       } yield {
-        assertEquals(count, 3L)
-        assertEquals(members, Set("b", "c", "d"))
+        assertEquals(count, Ok(3L))
+        assertEquals(members, Ok(Set("b", "c", "d")))
       }
     }
   }
@@ -191,7 +194,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         diff <- valkey.sdiff("set14a", "set14b", "set14c")
         _ <- valkey.del("set14a", "set14b", "set14c")
       } yield {
-        assertEquals(diff, Set("a", "b"))
+        assertEquals(diff, Ok(Set("a", "b")))
       }
     }
   }
@@ -205,8 +208,8 @@ class SetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.smembers("set15dest")
         _ <- valkey.del("set15a", "set15b", "set15dest")
       } yield {
-        assertEquals(count, 2L)
-        assertEquals(members, Set("a", "b"))
+        assertEquals(count, Ok(2L))
+        assertEquals(members, Ok(Set("a", "b")))
       }
     }
   }
@@ -219,9 +222,11 @@ class SetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.smembers("set16")
         _ <- valkey.del("set16")
       } yield {
-        assert(popped.isDefined)
-        assertEquals(remaining.size, 4)
-        assert(!remaining.contains(popped.get))
+        val Ok(p) = popped: @unchecked
+        val Ok(r) = remaining: @unchecked
+        assert(p.isDefined)
+        assertEquals(r.size, 4)
+        assert(!r.contains(p.get))
       }
     }
   }
@@ -230,7 +235,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         popped <- valkey.spop("non-existent")
-      } yield assertEquals(popped, None)
+      } yield assertEquals(popped, Ok(None))
     }
   }
 
@@ -242,9 +247,11 @@ class SetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.smembers("set17")
         _ <- valkey.del("set17")
       } yield {
-        assertEquals(popped.size, 3)
-        assertEquals(remaining.size, 2)
-        assert(popped.intersect(remaining).isEmpty) // No overlap
+        val Ok(p) = popped: @unchecked
+        val Ok(r) = remaining: @unchecked
+        assertEquals(p.size, 3)
+        assertEquals(r.size, 2)
+        assert(p.intersect(r).isEmpty) // No overlap
       }
     }
   }
@@ -257,8 +264,9 @@ class SetCommandsSuite extends ValkeyTestSuite {
         card <- valkey.scard("set18")
         _ <- valkey.del("set18")
       } yield {
-        assert(member.isDefined)
-        assertEquals(card, 5L) // Set size unchanged
+        val Ok(m) = member: @unchecked
+        assert(m.isDefined)
+        assertEquals(card, Ok(5L)) // Set size unchanged
       }
     }
   }
@@ -267,7 +275,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         member <- valkey.srandmember("non-existent")
-      } yield assertEquals(member, None)
+      } yield assertEquals(member, Ok(None))
     }
   }
 
@@ -279,8 +287,9 @@ class SetCommandsSuite extends ValkeyTestSuite {
         card <- valkey.scard("set19")
         _ <- valkey.del("set19")
       } yield {
-        assertEquals(members.length, 3)
-        assertEquals(card, 5L) // Set size unchanged
+        val Ok(ms) = members: @unchecked
+        assertEquals(ms.length, 3)
+        assertEquals(card, Ok(5L)) // Set size unchanged
       }
     }
   }
@@ -295,9 +304,9 @@ class SetCommandsSuite extends ValkeyTestSuite {
         membersB <- valkey.smembers("set20b")
         _ <- valkey.del("set20a", "set20b")
       } yield {
-        assertEquals(moved, true)
-        assertEquals(membersA, Set("a", "c"))
-        assertEquals(membersB, Set("x", "y", "z", "b"))
+        assertEquals(moved, Ok(true))
+        assertEquals(membersA, Ok(Set("a", "c")))
+        assertEquals(membersB, Ok(Set("x", "y", "z", "b")))
       }
     }
   }
@@ -309,7 +318,7 @@ class SetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.sadd("set21b", "x", "y", "z")
         moved <- valkey.smove("set21a", "set21b", "notexists")
         _ <- valkey.del("set21a", "set21b")
-      } yield assertEquals(moved, false)
+      } yield assertEquals(moved, Ok(false))
     }
   }
 
@@ -345,14 +354,16 @@ class SetCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("post:1:tags", "post:2:tags", "post:3:tags")
       } yield {
-        assertEquals(hasScala1 && hasScala2 && hasScala3, true)
-        assertEquals(commonTags, Set("scala"))
+        assertEquals(hasScala1, Ok(true))
+        assertEquals(hasScala2, Ok(true))
+        assertEquals(hasScala3, Ok(true))
+        assertEquals(commonTags, Ok(Set("scala")))
         assertEquals(
           allTags,
-          Set("scala", "fp", "cats", "akka", "distributed", "zio")
+          Ok(Set("scala", "fp", "cats", "akka", "distributed", "zio"))
         )
-        assertEquals(uniqueToPost1, Set("cats"))
-        assertEquals(tagCount, 3L)
+        assertEquals(uniqueToPost1, Ok(Set("cats")))
+        assertEquals(tagCount, Ok(3L))
       }
     }
   }

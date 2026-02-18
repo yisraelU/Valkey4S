@@ -48,7 +48,9 @@ object ClusterExample extends IOApp.Simple {
           )
 
           values <- valkey.mGet(Set("key1", "key2", "key3"))
-          _ <- IO.println(s"Retrieved from cluster: $values")
+          _ <- IO.println(
+            s"Retrieved from cluster: ${values.getOrElse(Map.empty)}"
+          )
 
           _ <- IO.println("\n=== Cluster example completed! ===")
         } yield ()

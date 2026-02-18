@@ -1,6 +1,9 @@
 package dev.profunktor.valkey4cats
 
 import dev.profunktor.valkey4cats.arguments.InsertPosition
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
+import dev.profunktor.valkey4cats.results.InsertResult
 
 class ListCommandsSuite extends ValkeyTestSuite {
 
@@ -11,8 +14,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list1", 0, -1)
         _ <- valkey.del("list1")
       } yield {
-        assertEquals(length, 3L)
-        assertEquals(result, List("first", "second", "third"))
+        assertEquals(length, Ok(3L))
+        assertEquals(result, Ok(List("first", "second", "third")))
       }
     }
   }
@@ -24,8 +27,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list2", 0, -1)
         _ <- valkey.del("list2")
       } yield {
-        assertEquals(length, 3L)
-        assertEquals(result, List("first", "second", "third"))
+        assertEquals(length, Ok(3L))
+        assertEquals(result, Ok(List("first", "second", "third")))
       }
     }
   }
@@ -38,8 +41,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.lrange("list3", 0, -1)
         _ <- valkey.del("list3")
       } yield {
-        assertEquals(popped, Some("first"))
-        assertEquals(remaining, List("second", "third"))
+        assertEquals(popped, Ok(Some("first")))
+        assertEquals(remaining, Ok(List("second", "third")))
       }
     }
   }
@@ -48,7 +51,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         popped <- valkey.lpop("non-existent")
-      } yield assertEquals(popped, None)
+      } yield assertEquals(popped, Ok(None))
     }
   }
 
@@ -60,8 +63,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.lrange("list4", 0, -1)
         _ <- valkey.del("list4")
       } yield {
-        assertEquals(popped, Some("third"))
-        assertEquals(remaining, List("first", "second"))
+        assertEquals(popped, Ok(Some("third")))
+        assertEquals(remaining, Ok(List("first", "second")))
       }
     }
   }
@@ -74,8 +77,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.lrange("list5", 0, -1)
         _ <- valkey.del("list5")
       } yield {
-        assertEquals(popped, List("a", "b", "c"))
-        assertEquals(remaining, List("d", "e"))
+        assertEquals(popped, Ok(List("a", "b", "c")))
+        assertEquals(remaining, Ok(List("d", "e")))
       }
     }
   }
@@ -88,8 +91,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.lrange("list6", 0, -1)
         _ <- valkey.del("list6")
       } yield {
-        assertEquals(popped, List("e", "d", "c"))
-        assertEquals(remaining, List("a", "b"))
+        assertEquals(popped, Ok(List("e", "d", "c")))
+        assertEquals(remaining, Ok(List("a", "b")))
       }
     }
   }
@@ -101,7 +104,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list7", 0, -1)
         _ <- valkey.del("list7")
       } yield {
-        assertEquals(result, List("a", "b", "c", "d", "e"))
+        assertEquals(result, Ok(List("a", "b", "c", "d", "e")))
       }
     }
   }
@@ -113,7 +116,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list8", 1, 3)
         _ <- valkey.del("list8")
       } yield {
-        assertEquals(result, List("b", "c", "d"))
+        assertEquals(result, Ok(List("b", "c", "d")))
       }
     }
   }
@@ -122,7 +125,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         result <- valkey.lrange("non-existent", 0, -1)
-      } yield assertEquals(result, List.empty[String])
+      } yield assertEquals(result, Ok(List.empty[String]))
     }
   }
 
@@ -135,9 +138,9 @@ class ListCommandsSuite extends ValkeyTestSuite {
         elemLast <- valkey.lindex("list9", -1)
         _ <- valkey.del("list9")
       } yield {
-        assertEquals(elem0, Some("a"))
-        assertEquals(elem2, Some("c"))
-        assertEquals(elemLast, Some("e"))
+        assertEquals(elem0, Ok(Some("a")))
+        assertEquals(elem2, Ok(Some("c")))
+        assertEquals(elemLast, Ok(Some("e")))
       }
     }
   }
@@ -148,7 +151,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.rpush("list10", "a", "b", "c")
         result <- valkey.lindex("list10", 100)
         _ <- valkey.del("list10")
-      } yield assertEquals(result, None)
+      } yield assertEquals(result, Ok(None))
     }
   }
 
@@ -158,7 +161,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.rpush("list11", "a", "b", "c", "d", "e")
         length <- valkey.llen("list11")
         _ <- valkey.del("list11")
-      } yield assertEquals(length, 5L)
+      } yield assertEquals(length, Ok(5L))
     }
   }
 
@@ -166,7 +169,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         length <- valkey.llen("non-existent")
-      } yield assertEquals(length, 0L)
+      } yield assertEquals(length, Ok(0L))
     }
   }
 
@@ -178,7 +181,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list12", 0, -1)
         _ <- valkey.del("list12")
       } yield {
-        assertEquals(result, List("b", "c", "d"))
+        assertEquals(result, Ok(List("b", "c", "d")))
       }
     }
   }
@@ -191,7 +194,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list13", 0, -1)
         _ <- valkey.del("list13")
       } yield {
-        assertEquals(result, List("a", "b", "CHANGED", "d", "e"))
+        assertEquals(result, Ok(List("a", "b", "CHANGED", "d", "e")))
       }
     }
   }
@@ -204,8 +207,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list14", 0, -1)
         _ <- valkey.del("list14")
       } yield {
-        assertEquals(count, 2L)
-        assertEquals(result, List("b", "c", "a", "d"))
+        assertEquals(count, Ok(2L))
+        assertEquals(result, Ok(List("b", "c", "a", "d")))
       }
     }
   }
@@ -218,8 +221,8 @@ class ListCommandsSuite extends ValkeyTestSuite {
         result <- valkey.lrange("list15", 0, -1)
         _ <- valkey.del("list15")
       } yield {
-        assertEquals(count, 3L)
-        assertEquals(result, List("b", "c", "d"))
+        assertEquals(count, Ok(3L))
+        assertEquals(result, Ok(List("b", "c", "d")))
       }
     }
   }
@@ -228,12 +231,17 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list16", "a", "b", "d", "e")
-        length <- valkey.linsert("list16", InsertPosition.Before, "d", "c")
+        insertResult <- valkey.linsert(
+          "list16",
+          InsertPosition.Before,
+          "d",
+          "c"
+        )
         result <- valkey.lrange("list16", 0, -1)
         _ <- valkey.del("list16")
       } yield {
-        assertEquals(length, 5L)
-        assertEquals(result, List("a", "b", "c", "d", "e"))
+        assertEquals(insertResult, Ok(InsertResult.Inserted(5L)))
+        assertEquals(result, Ok(List("a", "b", "c", "d", "e")))
       }
     }
   }
@@ -242,23 +250,28 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list17", "a", "b", "c", "e")
-        length <- valkey.linsert("list17", InsertPosition.After, "c", "d")
+        insertResult <- valkey.linsert("list17", InsertPosition.After, "c", "d")
         result <- valkey.lrange("list17", 0, -1)
         _ <- valkey.del("list17")
       } yield {
-        assertEquals(length, 5L)
-        assertEquals(result, List("a", "b", "c", "d", "e"))
+        assertEquals(insertResult, Ok(InsertResult.Inserted(5L)))
+        assertEquals(result, Ok(List("a", "b", "c", "d", "e")))
       }
     }
   }
 
-  test("LINSERT should return -1 when pivot not found") {
+  test("LINSERT should return PivotNotFound when pivot not found") {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list18", "a", "b", "c")
-        length <- valkey.linsert("list18", InsertPosition.Before, "x", "y")
+        insertResult <- valkey.linsert(
+          "list18",
+          InsertPosition.Before,
+          "x",
+          "y"
+        )
         _ <- valkey.del("list18")
-      } yield assertEquals(length, -1L)
+      } yield assertEquals(insertResult, Ok(InsertResult.PivotNotFound))
     }
   }
 
@@ -268,7 +281,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.rpush("list19", "a", "b", "c", "b", "d")
         index <- valkey.lpos("list19", "b")
         _ <- valkey.del("list19")
-      } yield assertEquals(index, Some(1L))
+      } yield assertEquals(index, Ok(Some(1L)))
     }
   }
 
@@ -278,7 +291,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.rpush("list20", "a", "b", "c")
         index <- valkey.lpos("list20", "x")
         _ <- valkey.del("list20")
-      } yield assertEquals(index, None)
+      } yield assertEquals(index, Ok(None))
     }
   }
 
@@ -309,11 +322,11 @@ class ListCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("queue")
       } yield {
-        assertEquals(length1, 3L)
-        assertEquals(task1, Some("task1"))
-        assertEquals(currentQueue, List("task2", "task3", "task4", "task5"))
-        assertEquals(tasks, List("task2", "task3"))
-        assertEquals(finalLength, 2L)
+        assertEquals(length1, Ok(3L))
+        assertEquals(task1, Ok(Some("task1")))
+        assertEquals(currentQueue, Ok(List("task2", "task3", "task4", "task5")))
+        assertEquals(tasks, Ok(List("task2", "task3")))
+        assertEquals(finalLength, Ok(2L))
       }
     }
   }
@@ -334,9 +347,9 @@ class ListCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("stack")
       } yield {
-        assertEquals(item1, Some("item3")) // Last in
-        assertEquals(item2, Some("item2"))
-        assertEquals(item3, Some("item1")) // First in
+        assertEquals(item1, Ok(Some("item3"))) // Last in
+        assertEquals(item2, Ok(Some("item2")))
+        assertEquals(item3, Ok(Some("item1"))) // First in
       }
     }
   }

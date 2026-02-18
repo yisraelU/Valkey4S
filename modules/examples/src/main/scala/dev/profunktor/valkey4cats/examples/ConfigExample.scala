@@ -58,7 +58,7 @@ object ConfigExample extends IOApp.Simple {
         _ <- IO.println("=== Configuration Examples ===")
         _ <- valkey.set("config-test", "success")
         result <- valkey.get("config-test")
-        _ <- IO.println(s"Result: $result")
+        _ <- IO.println(s"Result: ${result.getOrElse(None)}")
         _ <- valkey.del("config-test")
       } yield ()
     }

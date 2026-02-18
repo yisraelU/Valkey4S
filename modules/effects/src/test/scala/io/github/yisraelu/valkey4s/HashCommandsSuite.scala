@@ -1,5 +1,8 @@
 package dev.profunktor.valkey4cats
 
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
+
 class HashCommandsSuite extends ValkeyTestSuite {
 
   test("HSET should set a single field-value pair") {
@@ -9,8 +12,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         value <- valkey.hget("hash1", "field1")
         _ <- valkey.del("hash1")
       } yield {
-        assertEquals(count, 1L)
-        assertEquals(value, Some("value1"))
+        assertEquals(count, Ok(1L))
+        assertEquals(value, Ok(Some("value1")))
       }
     }
   }
@@ -23,7 +26,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
           Map("f1" -> "v1", "f2" -> "v2", "f3" -> "v3")
         )
         _ <- valkey.del("hash2")
-      } yield assertEquals(count, 3L)
+      } yield assertEquals(count, Ok(3L))
     }
   }
 
@@ -35,8 +38,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         value <- valkey.hget("hash3", "field")
         _ <- valkey.del("hash3")
       } yield {
-        assertEquals(count, 0L)
-        assertEquals(value, Some("updated"))
+        assertEquals(count, Ok(0L))
+        assertEquals(value, Ok(Some("updated")))
       }
     }
   }
@@ -47,7 +50,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.hset("hash4", Map("exists" -> "value"))
         result <- valkey.hget("hash4", "does-not-exist")
         _ <- valkey.del("hash4")
-      } yield assertEquals(result, None)
+      } yield assertEquals(result, Ok(None))
     }
   }
 
@@ -55,7 +58,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         result <- valkey.hget("non-existent-hash", "field")
-      } yield assertEquals(result, None)
+      } yield assertEquals(result, Ok(None))
     }
   }
 
@@ -66,10 +69,11 @@ class HashCommandsSuite extends ValkeyTestSuite {
         result <- valkey.hgetall("hash5")
         _ <- valkey.del("hash5")
       } yield {
-        assertEquals(result.size, 3)
-        assertEquals(result("f1"), "v1")
-        assertEquals(result("f2"), "v2")
-        assertEquals(result("f3"), "v3")
+        val Ok(m) = result: @unchecked
+        assertEquals(m.size, 3)
+        assertEquals(m("f1"), "v1")
+        assertEquals(m("f2"), "v2")
+        assertEquals(m("f3"), "v3")
       }
     }
   }
@@ -78,7 +82,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         result <- valkey.hgetall("non-existent")
-      } yield assertEquals(result, Map.empty[String, String])
+      } yield assertEquals(result, Ok(Map.empty[String, String]))
     }
   }
 
@@ -89,7 +93,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         result <- valkey.hmget("hash6", "f1", "f2", "f3")
         _ <- valkey.del("hash6")
       } yield {
-        assertEquals(result, List(Some("v1"), Some("v2"), Some("v3")))
+        assertEquals(result, Ok(List(Some("v1"), Some("v2"), Some("v3"))))
       }
     }
   }
@@ -101,7 +105,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         result <- valkey.hmget("hash7", "exists", "missing1", "missing2")
         _ <- valkey.del("hash7")
       } yield {
-        assertEquals(result, List(Some("value"), None, None))
+        assertEquals(result, Ok(List(Some("value"), None, None)))
       }
     }
   }
@@ -114,8 +118,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.hgetall("hash8")
         _ <- valkey.del("hash8")
       } yield {
-        assertEquals(count, 2L)
-        assertEquals(remaining, Map("f3" -> "v3"))
+        assertEquals(count, Ok(2L))
+        assertEquals(remaining, Ok(Map("f3" -> "v3")))
       }
     }
   }
@@ -124,7 +128,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         count <- valkey.hdel("non-existent", "field")
-      } yield assertEquals(count, 0L)
+      } yield assertEquals(count, Ok(0L))
     }
   }
 
@@ -134,7 +138,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.hset("hash9", Map("field" -> "value"))
         exists <- valkey.hexists("hash9", "field")
         _ <- valkey.del("hash9")
-      } yield assertEquals(exists, true)
+      } yield assertEquals(exists, Ok(true))
     }
   }
 
@@ -144,7 +148,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.hset("hash10", Map("field" -> "value"))
         exists <- valkey.hexists("hash10", "other-field")
         _ <- valkey.del("hash10")
-      } yield assertEquals(exists, false)
+      } yield assertEquals(exists, Ok(false))
     }
   }
 
@@ -158,7 +162,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         keys <- valkey.hkeys("hash11")
         _ <- valkey.del("hash11")
       } yield {
-        assertEquals(keys.toSet, Set("f1", "f2", "f3"))
+        val Ok(ks) = keys: @unchecked
+        assertEquals(ks.toSet, Set("f1", "f2", "f3"))
       }
     }
   }
@@ -173,7 +178,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         values <- valkey.hvals("hash12")
         _ <- valkey.del("hash12")
       } yield {
-        assertEquals(values.toSet, Set("v1", "v2", "v3"))
+        val Ok(vs) = values: @unchecked
+        assertEquals(vs.toSet, Set("v1", "v2", "v3"))
       }
     }
   }
@@ -187,7 +193,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         )
         length <- valkey.hlen("hash13")
         _ <- valkey.del("hash13")
-      } yield assertEquals(length, 3L)
+      } yield assertEquals(length, Ok(3L))
     }
   }
 
@@ -195,7 +201,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         length <- valkey.hlen("non-existent")
-      } yield assertEquals(length, 0L)
+      } yield assertEquals(length, Ok(0L))
     }
   }
 
@@ -207,8 +213,8 @@ class HashCommandsSuite extends ValkeyTestSuite {
         value <- valkey.hget("hash14", "counter")
         _ <- valkey.del("hash14")
       } yield {
-        assertEquals(result, 15L)
-        assertEquals(value, Some("15"))
+        assertEquals(result, Ok(15L))
+        assertEquals(value, Ok(Some("15")))
       }
     }
   }
@@ -218,7 +224,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
       for {
         result <- valkey.hincrBy("hash15", "new-counter", 42)
         _ <- valkey.del("hash15")
-      } yield assertEquals(result, 42L)
+      } yield assertEquals(result, Ok(42L))
     }
   }
 
@@ -228,7 +234,10 @@ class HashCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.hset("hash16", Map("price" -> "10.5"))
         result <- valkey.hincrByFloat("hash16", "price", 2.3)
         _ <- valkey.del("hash16")
-      } yield assertEquals(result, 12.8, 0.001)
+      } yield {
+        val Ok(d) = result: @unchecked
+        assertEquals(d, 12.8, 0.001)
+      }
     }
   }
 
@@ -240,9 +249,9 @@ class HashCommandsSuite extends ValkeyTestSuite {
         value <- valkey.hget("hash17", "field")
         _ <- valkey.del("hash17")
       } yield {
-        assertEquals(result1, true)
-        assertEquals(result2, false)
-        assertEquals(value, Some("value1"))
+        assertEquals(result1, Ok(true))
+        assertEquals(result2, Ok(false))
+        assertEquals(value, Ok(Some("value1")))
       }
     }
   }
@@ -253,7 +262,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.hset("hash18", Map("field" -> "Hello"))
         length <- valkey.hstrlen("hash18", "field")
         _ <- valkey.del("hash18")
-      } yield assertEquals(length, 5L)
+      } yield assertEquals(length, Ok(5L))
     }
   }
 
@@ -261,7 +270,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         length <- valkey.hstrlen("hash19", "non-existent")
-      } yield assertEquals(length, 0L)
+      } yield assertEquals(length, Ok(0L))
     }
   }
 
@@ -275,8 +284,9 @@ class HashCommandsSuite extends ValkeyTestSuite {
         field <- valkey.hrandfield("hash20")
         _ <- valkey.del("hash20")
       } yield {
-        assert(field.isDefined)
-        assert(Set("f1", "f2", "f3").contains(field.get))
+        val Ok(f) = field: @unchecked
+        assert(f.isDefined)
+        assert(Set("f1", "f2", "f3").contains(f.get))
       }
     }
   }
@@ -285,7 +295,7 @@ class HashCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         field <- valkey.hrandfield("non-existent")
-      } yield assertEquals(field, None)
+      } yield assertEquals(field, Ok(None))
     }
   }
 
@@ -299,8 +309,9 @@ class HashCommandsSuite extends ValkeyTestSuite {
         fields <- valkey.hrandfieldWithCount("hash21", 2)
         _ <- valkey.del("hash21")
       } yield {
-        assertEquals(fields.length, 2)
-        assert(fields.forall(f => Set("f1", "f2", "f3").contains(f)))
+        val Ok(fs) = fields: @unchecked
+        assertEquals(fs.length, 2)
+        assert(fs.forall(f => Set("f1", "f2", "f3").contains(f)))
       }
     }
   }
@@ -315,8 +326,9 @@ class HashCommandsSuite extends ValkeyTestSuite {
         pairs <- valkey.hrandfieldWithCountWithValues("hash22", 2)
         _ <- valkey.del("hash22")
       } yield {
-        assertEquals(pairs.length, 2)
-        pairs.foreach { case (field, value) =>
+        val Ok(ps) = pairs: @unchecked
+        assertEquals(ps.length, 2)
+        ps.foreach { case (field, value) =>
           assert(Set("f1", "f2", "f3").contains(field))
           assertEquals(value, s"v${field.last}")
         }
@@ -357,12 +369,13 @@ class HashCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("user:1")
       } yield {
-        assertEquals(name, Some("Alice"))
-        assertEquals(email, Some("alice@example.com"))
-        assertEquals(newScore, 150L)
-        assertEquals(hasPhone, false)
-        assertEquals(allFields.size, 4)
-        assertEquals(fieldCount, 4L)
+        assertEquals(name, Ok(Some("Alice")))
+        assertEquals(email, Ok(Some("alice@example.com")))
+        assertEquals(newScore, Ok(150L))
+        assertEquals(hasPhone, Ok(false))
+        val Ok(af) = allFields: @unchecked
+        assertEquals(af.size, 4)
+        assertEquals(fieldCount, Ok(4L))
       }
     }
   }

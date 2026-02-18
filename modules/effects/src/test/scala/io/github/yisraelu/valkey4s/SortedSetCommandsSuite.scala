@@ -1,5 +1,8 @@
 package dev.profunktor.valkey4cats
 
+import dev.profunktor.valkey4cats.model.ValkeyResponse
+import dev.profunktor.valkey4cats.model.ValkeyResponse.Ok
+
 class SortedSetCommandsSuite extends ValkeyTestSuite {
 
   test("ZADD should add members with scores") {
@@ -9,8 +12,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.zrange("zset1", 0, -1)
         _ <- valkey.del("zset1")
       } yield {
-        assertEquals(count, 3L)
-        assertEquals(members, List("a", "b", "c"))
+        assertEquals(count, Ok(3L))
+        assertEquals(members, Ok(List("a", "b", "c")))
       }
     }
   }
@@ -23,9 +26,9 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.zrange("zset2", 0, -1)
         _ <- valkey.del("zset2")
       } yield {
-        assertEquals(count1, 2L)
-        assertEquals(count2, 0L) // 0 because b already existed
-        assertEquals(members, List("a", "b")) // b now has higher score
+        assertEquals(count1, Ok(2L))
+        assertEquals(count2, Ok(0L)) // 0 because b already existed
+        assertEquals(members, Ok(List("a", "b"))) // b now has higher score
       }
     }
   }
@@ -41,8 +44,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.zrange("zset3", 0, -1)
         _ <- valkey.del("zset3")
       } yield {
-        assertEquals(count, 2L)
-        assertEquals(members, List("a", "c"))
+        assertEquals(count, Ok(2L))
+        assertEquals(members, Ok(List("a", "c")))
       }
     }
   }
@@ -57,7 +60,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.zrange("zset4", 0, -1)
         _ <- valkey.del("zset4")
       } yield {
-        assertEquals(members, List("bob", "alice", "charlie"))
+        assertEquals(members, Ok(List("bob", "alice", "charlie")))
       }
     }
   }
@@ -72,7 +75,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         members <- valkey.zrange("zset5", 1, 3)
         _ <- valkey.del("zset5")
       } yield {
-        assertEquals(members, List("b", "c", "d"))
+        assertEquals(members, Ok(List("b", "c", "d")))
       }
     }
   }
@@ -86,7 +89,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
       } yield {
         assertEquals(
           membersWithScores,
-          List(("a", 1.5), ("b", 2.5), ("c", 3.5))
+          Ok(List(("a", 1.5), ("b", 2.5), ("c", 3.5)))
         )
       }
     }
@@ -99,7 +102,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         score <- valkey.zscore("zset7", "alice")
         _ <- valkey.del("zset7")
       } yield {
-        assertEquals(score, Some(95.5))
+        assertEquals(score, Ok(Some(95.5)))
       }
     }
   }
@@ -110,7 +113,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.zadd("zset8", Map("alice" -> 95.5))
         score <- valkey.zscore("zset8", "bob")
         _ <- valkey.del("zset8")
-      } yield assertEquals(score, None)
+      } yield assertEquals(score, Ok(None))
     }
   }
 
@@ -121,7 +124,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         scores <- valkey.zmscore("zset9", "a", "x", "c")
         _ <- valkey.del("zset9")
       } yield {
-        assertEquals(scores, List(Some(1.0), None, Some(3.0)))
+        assertEquals(scores, Ok(List(Some(1.0), None, Some(3.0))))
       }
     }
   }
@@ -135,7 +138,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         )
         cardinality <- valkey.zcard("zset10")
         _ <- valkey.del("zset10")
-      } yield assertEquals(cardinality, 4L)
+      } yield assertEquals(cardinality, Ok(4L))
     }
   }
 
@@ -143,7 +146,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         cardinality <- valkey.zcard("non-existent")
-      } yield assertEquals(cardinality, 0L)
+      } yield assertEquals(cardinality, Ok(0L))
     }
   }
 
@@ -156,7 +159,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         )
         rank <- valkey.zrank("zset11", "c")
         _ <- valkey.del("zset11")
-      } yield assertEquals(rank, Some(2L)) // 0: a, 1: b, 2: c
+      } yield assertEquals(rank, Ok(Some(2L))) // 0: a, 1: b, 2: c
     }
   }
 
@@ -166,7 +169,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         _ <- valkey.zadd("zset12", Map("a" -> 1.0, "b" -> 2.0))
         rank <- valkey.zrank("zset12", "x")
         _ <- valkey.del("zset12")
-      } yield assertEquals(rank, None)
+      } yield assertEquals(rank, Ok(None))
     }
   }
 
@@ -179,7 +182,10 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         )
         rank <- valkey.zrevrank("zset13", "c")
         _ <- valkey.del("zset13")
-      } yield assertEquals(rank, Some(1L)) // Reversed: 0: d, 1: c, 2: b, 3: a
+      } yield assertEquals(
+        rank,
+        Ok(Some(1L))
+      ) // Reversed: 0: d, 1: c, 2: b, 3: a
     }
   }
 
@@ -191,8 +197,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         score <- valkey.zscore("zset14", "player1")
         _ <- valkey.del("zset14")
       } yield {
-        assertEquals(newScore, 150.0)
-        assertEquals(score, Some(150.0))
+        assertEquals(newScore, Ok(150.0))
+        assertEquals(score, Ok(Some(150.0)))
       }
     }
   }
@@ -202,7 +208,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
       for {
         newScore <- valkey.zincrby("zset15", 42.5, "new-member")
         _ <- valkey.del("zset15")
-      } yield assertEquals(newScore, 42.5)
+      } yield assertEquals(newScore, Ok(42.5))
     }
   }
 
@@ -215,7 +221,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         )
         count <- valkey.zcount("zset16", 2.0, 4.0)
         _ <- valkey.del("zset16")
-      } yield assertEquals(count, 3L) // b, c, d
+      } yield assertEquals(count, Ok(3L)) // b, c, d
     }
   }
 
@@ -227,8 +233,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.zrange("zset17", 0, -1)
         _ <- valkey.del("zset17")
       } yield {
-        assertEquals(popped, Some(("a", 1.0)))
-        assertEquals(remaining, List("b", "c"))
+        assertEquals(popped, Ok(Some(("a", 1.0))))
+        assertEquals(remaining, Ok(List("b", "c")))
       }
     }
   }
@@ -237,7 +243,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         popped <- valkey.zpopmin("non-existent")
-      } yield assertEquals(popped, None)
+      } yield assertEquals(popped, Ok(None))
     }
   }
 
@@ -254,8 +260,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.zrange("zset18", 0, -1)
         _ <- valkey.del("zset18")
       } yield {
-        assertEquals(popped, List(("a", 1.0), ("b", 2.0)))
-        assertEquals(remaining, List("c", "d"))
+        assertEquals(popped, Ok(List(("a", 1.0), ("b", 2.0))))
+        assertEquals(remaining, Ok(List("c", "d")))
       }
     }
   }
@@ -268,8 +274,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.zrange("zset19", 0, -1)
         _ <- valkey.del("zset19")
       } yield {
-        assertEquals(popped, Some(("c", 3.0)))
-        assertEquals(remaining, List("a", "b"))
+        assertEquals(popped, Ok(Some(("c", 3.0))))
+        assertEquals(remaining, Ok(List("a", "b")))
       }
     }
   }
@@ -287,8 +293,8 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         remaining <- valkey.zrange("zset20", 0, -1)
         _ <- valkey.del("zset20")
       } yield {
-        assertEquals(popped, List(("d", 4.0), ("c", 3.0)))
-        assertEquals(remaining, List("a", "b"))
+        assertEquals(popped, Ok(List(("d", 4.0), ("c", 3.0))))
+        assertEquals(remaining, Ok(List("a", "b")))
       }
     }
   }
@@ -301,9 +307,10 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         card <- valkey.zcard("zset21")
         _ <- valkey.del("zset21")
       } yield {
-        assert(member.isDefined)
-        assert(Set("a", "b", "c").contains(member.get))
-        assertEquals(card, 3L) // Size unchanged
+        val Ok(m) = member: @unchecked
+        assert(m.isDefined)
+        assert(Set("a", "b", "c").contains(m.get))
+        assertEquals(card, Ok(3L)) // Size unchanged
       }
     }
   }
@@ -312,7 +319,7 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         member <- valkey.zrandmember("non-existent")
-      } yield assertEquals(member, None)
+      } yield assertEquals(member, Ok(None))
     }
   }
 
@@ -327,8 +334,9 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         card <- valkey.zcard("zset22")
         _ <- valkey.del("zset22")
       } yield {
-        assertEquals(members.length, 2)
-        assertEquals(card, 4L) // Size unchanged
+        val Ok(ms) = members: @unchecked
+        assertEquals(ms.length, 2)
+        assertEquals(card, Ok(4L)) // Size unchanged
       }
     }
   }
@@ -340,8 +348,9 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         membersWithScores <- valkey.zrandmemberWithScores("zset23", 2)
         _ <- valkey.del("zset23")
       } yield {
-        assertEquals(membersWithScores.length, 2)
-        membersWithScores.foreach { case (member, score) =>
+        val Ok(mws) = membersWithScores: @unchecked
+        assertEquals(mws.length, 2)
+        mws.foreach { case (member, score) =>
           assert(Set("a", "b", "c").contains(member))
           assert(score >= 1.0 && score <= 3.0)
         }
@@ -389,23 +398,25 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("leaderboard")
       } yield {
+        val Ok(t3) = top3: @unchecked
         // Original top 3: Bob (1500), Diana (1200), Alice (1000)
-        assertEquals(top3.map(_._1), List("Alice", "Diana", "Bob"))
+        assertEquals(t3.map(_._1), List("Alice", "Diana", "Bob"))
 
         // Alice was originally 3rd from top (0: Bob, 1: Diana, 2: Alice)
-        assertEquals(aliceRevRank, Some(2L))
+        assertEquals(aliceRevRank, Ok(Some(2L)))
 
         // Alice's new score
-        assertEquals(aliceNewScore, 1300.0)
+        assertEquals(aliceNewScore, Ok(1300.0))
 
+        val Ok(ut3) = updatedTop3: @unchecked
         // Updated top 3: Bob (1500), Alice (1300), Diana (1200)
-        assertEquals(updatedTop3.map(_._1), List("Diana", "Alice", "Bob"))
+        assertEquals(ut3.map(_._1), List("Diana", "Alice", "Bob"))
 
         // High scorers: Bob, Alice, Diana (now 3 players >= 1000)
-        assertEquals(highScorers, 3L)
+        assertEquals(highScorers, Ok(3L))
 
         // Total players
-        assertEquals(totalPlayers, 5L)
+        assertEquals(totalPlayers, Ok(5L))
       }
     }
   }
@@ -439,10 +450,12 @@ class SortedSetCommandsSuite extends ValkeyTestSuite {
         // Cleanup
         _ <- valkey.del("tasks")
       } yield {
-        assertEquals(topTask, Some(("critical-bug", 1.0)))
-        assertEquals(nextTasks.map(_._1), List("urgent-patch", "security-fix"))
+        assertEquals(topTask, Ok(Some(("critical-bug", 1.0))))
+        val Ok(nt) = nextTasks: @unchecked
+        assertEquals(nt.map(_._1), List("urgent-patch", "security-fix"))
+        val Ok(r) = remaining: @unchecked
         assertEquals(
-          remaining.map(_._1),
+          r.map(_._1),
           List("feature-request", "documentation")
         )
       }
