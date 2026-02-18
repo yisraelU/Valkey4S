@@ -1,7 +1,8 @@
 package dev.profunktor.valkey4cats.examples
 
 import cats.effect.*
-import dev.profunktor.valkey4cats.effect.Log // Import the valkey string interpolator
+import dev.profunktor.valkey4cats.effect.Log
+import dev.profunktor.valkey4cats.syntax.literals.* // Import the valkey string interpolator
 
 /** Example demonstrating compile-time validated Valkey URI literals
   *

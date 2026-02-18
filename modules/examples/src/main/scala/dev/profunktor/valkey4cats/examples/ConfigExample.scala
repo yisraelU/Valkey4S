@@ -19,10 +19,10 @@ object ConfigExample extends IOApp.Simple {
     val simpleExample = Valkey[IO].utf8("redis://localhost:6379")
 
     // Example 2: URI with authentication
-    val authExample = Valkey[IO].utf8("redis://:mypassword@localhost:6379")
+    val _ = Valkey[IO].utf8("redis://:mypassword@localhost:6379")
 
     // Example 3: TLS connection
-    val tlsExample = Valkey[IO].utf8("rediss://secure-server:6380")
+    val _ = Valkey[IO].utf8("rediss://secure-server:6380")
 
     // Example 4: Full configuration with all options
     val config = ValkeyClientConfig(
@@ -44,7 +44,7 @@ object ConfigExample extends IOApp.Simple {
       protocolVersion = ProtocolVersion.RESP3
     )
 
-    val advancedExample = Valkey[IO].fromConfig[String, String](config)
+    val _ = Valkey[IO].fromConfig[String, String](config)
 
     // Use the simple example
     simpleExample.use { valkey =>

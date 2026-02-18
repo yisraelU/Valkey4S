@@ -121,7 +121,7 @@ sealed abstract class ValkeyClientConfig {
         advancedBuilder.connectionTimeout(timeout.toMillis.toInt)
       )
       tlsAdvancedConfig.foreach(advancedBuilder.tlsAdvancedConfiguration)
-      builder.advancedConfiguration(advancedBuilder.build())
+      val _ = builder.advancedConfiguration(advancedBuilder.build())
     }
 
     builder.build()

@@ -1,10 +1,7 @@
 package dev.profunktor.valkey4cats.effect
 
 import cats.effect.*
-import dev.profunktor.valkey4cats.connection.{
-  ValkeyClient,
-  ValkeyClusterClient
-}
+import dev.profunktor.valkey4cats.connection.{ValkeyClient, ValkeyClusterClient}
 import dev.profunktor.valkey4cats.model.{
   ValkeyClientConfig,
   ValkeyClusterConfig,

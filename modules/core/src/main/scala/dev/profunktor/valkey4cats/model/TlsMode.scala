@@ -12,7 +12,8 @@ sealed trait TlsMode { self =>
     case TlsMode.Enabled(_) => true
   }
 
-  private[valkey4cats] def toGlide: (Boolean, Option[G.TlsAdvancedConfiguration]) =
+  private[valkey4cats] def toGlide
+      : (Boolean, Option[G.TlsAdvancedConfiguration]) =
     self match {
       case TlsMode.Disabled =>
         (false, None)

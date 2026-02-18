@@ -3,7 +3,13 @@ package dev.profunktor.valkey4cats
 import cats.effect.*
 import cats.syntax.all.*
 import glide.api.BaseClient
-import dev.profunktor.valkey4cats.arguments.{InsertPosition, SetOptions, ZAddOptions}
+import dev.profunktor.valkey4cats.arguments.{
+  FlushMode,
+  InfoSection,
+  InsertPosition,
+  SetOptions,
+  ZAddOptions
+}
 import dev.profunktor.valkey4cats.codec.Codec
 import dev.profunktor.valkey4cats.connection.{ValkeyClient, ValkeyClusterClient}
 import dev.profunktor.valkey4cats.effect.FutureLift.FutureLiftOps
@@ -43,7 +49,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def get(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.get(keyGS).futureLift
+    baseClient
+      .get(keyGS)
+      .futureLift
       .map(gs => Option(gs).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in GET $key: ${err.getMessage}") *>
@@ -54,7 +62,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def set(key: K, value: V): F[Unit] = {
     val keyGS = keyCodec.encode(key)
     val valueGS = valueCodec.encode(value)
-    baseClient.set(keyGS, valueGS).futureLift
+    baseClient
+      .set(keyGS, valueGS)
+      .futureLift
       .void
       .handleErrorWith { err =>
         Log[F].error(s"Error in SET $key: ${err.getMessage}") *>
@@ -67,7 +77,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val valueGS = valueCodec.encode(value)
     val glideOptions = SetOptions.toGlide(options)
 
-    baseClient.set(keyGS, valueGS, glideOptions).futureLift
+    baseClient
+      .set(keyGS, valueGS, glideOptions)
+      .futureLift
       .map { result =>
         if (options.returnOldValue && result != null && result != "OK") {
           Some(valueCodec.decode(glide.api.models.GlideString.of(result)))
@@ -87,7 +99,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keysList = keys.toList
       val keysArray = keysList.map(k => keyCodec.encode(k)).toArray
-      baseClient.mget(keysArray).futureLift
+      baseClient
+        .mget(keysArray)
+        .futureLift
         .map { javaArray =>
           keysList
             .zip(javaArray.toList)
@@ -115,7 +129,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
         )
       }.asJava
 
-      baseClient.mset(javaMap).futureLift
+      baseClient
+        .mset(javaMap)
+        .futureLift
         .void
         .handleErrorWith { err =>
           Log[F].error(s"Error in MSET: ${err.getMessage}") *>
@@ -126,7 +142,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def incr(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.incr(keyGS).futureLift
+    baseClient
+      .incr(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in INCR $key: ${err.getMessage}") *>
@@ -136,7 +154,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def incrBy(key: K, amount: Long): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.incrBy(keyGS, amount).futureLift
+    baseClient
+      .incrBy(keyGS, amount)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in INCRBY $key $amount: ${err.getMessage}") *>
@@ -146,7 +166,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def decr(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.decr(keyGS).futureLift
+    baseClient
+      .decr(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in DECR $key: ${err.getMessage}") *>
@@ -156,7 +178,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def decrBy(key: K, amount: Long): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.decrBy(keyGS, amount).futureLift
+    baseClient
+      .decrBy(keyGS, amount)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in DECRBY $key $amount: ${err.getMessage}") *>
@@ -167,7 +191,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def append(key: K, value: V): F[Long] = {
     val keyGS = keyCodec.encode(key)
     val valueGS = valueCodec.encode(value)
-    baseClient.append(keyGS, valueGS).futureLift
+    baseClient
+      .append(keyGS, valueGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in APPEND $key: ${err.getMessage}") *>
@@ -177,7 +203,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def strlen(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.strlen(keyGS).futureLift
+    baseClient
+      .strlen(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in STRLEN $key: ${err.getMessage}") *>
@@ -192,7 +220,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       Async[F].pure(0L)
     } else {
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.del(keysArray).futureLift
+      baseClient
+        .del(keysArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in DEL: ${err.getMessage}") *>
@@ -203,7 +233,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def exists(key: K): F[Boolean] = {
     val keysArray = Array(keyCodec.encode(key))
-    baseClient.exists(keysArray).futureLift
+    baseClient
+      .exists(keysArray)
+      .futureLift
       .map(_.longValue() == 1L)
       .handleErrorWith { err =>
         Log[F].error(s"Error in EXISTS $key: ${err.getMessage}") *>
@@ -216,7 +248,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       Async[F].pure(0L)
     } else {
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.exists(keysArray).futureLift
+      baseClient
+        .exists(keysArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in EXISTS: ${err.getMessage}") *>
@@ -236,7 +270,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
         keyCodec.encode(k) -> valueCodec.encode(v)
       }.asJava
 
-      baseClient.hset(keyGS, javaMap).futureLift
+      baseClient
+        .hset(keyGS, javaMap)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in HSET $key: ${err.getMessage}") *>
@@ -248,7 +284,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def hget(key: K, field: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
-    baseClient.hget(keyGS, fieldGS).futureLift
+    baseClient
+      .hget(keyGS, fieldGS)
+      .futureLift
       .map(gs => Option(gs).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in HGET $key $field: ${err.getMessage}") *>
@@ -258,7 +296,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hgetall(key: K): F[Map[K, V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hgetall(keyGS).futureLift
+    baseClient
+      .hgetall(keyGS)
+      .futureLift
       .map { javaMap =>
         javaMap.asScala.map { case (k, v) =>
           keyCodec.decode(k) -> valueCodec.decode(v)
@@ -276,7 +316,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val fieldsArray = fields.map(keyCodec.encode).toArray
-      baseClient.hmget(keyGS, fieldsArray).futureLift
+      baseClient
+        .hmget(keyGS, fieldsArray)
+        .futureLift
         .map { javaArray =>
           javaArray.toList.map(gs => Option(gs).map(valueCodec.decode))
         }
@@ -293,7 +335,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val fieldsArray = fields.map(keyCodec.encode).toArray
-      baseClient.hdel(keyGS, fieldsArray).futureLift
+      baseClient
+        .hdel(keyGS, fieldsArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in HDEL $key: ${err.getMessage}") *>
@@ -305,7 +349,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def hexists(key: K, field: K): F[Boolean] = {
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
-    baseClient.hexists(keyGS, fieldGS).futureLift
+    baseClient
+      .hexists(keyGS, fieldGS)
+      .futureLift
       .map(_.booleanValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in HEXISTS $key $field: ${err.getMessage}") *>
@@ -315,7 +361,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hkeys(key: K): F[List[K]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hkeys(keyGS).futureLift
+    baseClient
+      .hkeys(keyGS)
+      .futureLift
       .map(_.toList.map(keyCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in HKEYS $key: ${err.getMessage}") *>
@@ -325,7 +373,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hvals(key: K): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hvals(keyGS).futureLift
+    baseClient
+      .hvals(keyGS)
+      .futureLift
       .map(_.toList.map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in HVALS $key: ${err.getMessage}") *>
@@ -335,7 +385,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hlen(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hlen(keyGS).futureLift
+    baseClient
+      .hlen(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in HLEN $key: ${err.getMessage}") *>
@@ -346,7 +398,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def hincrBy(key: K, field: K, increment: Long): F[Long] = {
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
-    baseClient.hincrBy(keyGS, fieldGS, increment).futureLift
+    baseClient
+      .hincrBy(keyGS, fieldGS, increment)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(
@@ -359,7 +413,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def hincrByFloat(key: K, field: K, increment: Double): F[Double] = {
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
-    baseClient.hincrByFloat(keyGS, fieldGS, increment).futureLift
+    baseClient
+      .hincrByFloat(keyGS, fieldGS, increment)
+      .futureLift
       .map(_.doubleValue())
       .handleErrorWith { err =>
         Log[F].error(
@@ -373,7 +429,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
     val valueGS = valueCodec.encode(value)
-    baseClient.hsetnx(keyGS, fieldGS, valueGS).futureLift
+    baseClient
+      .hsetnx(keyGS, fieldGS, valueGS)
+      .futureLift
       .map(_.booleanValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in HSETNX $key $field: ${err.getMessage}") *>
@@ -384,7 +442,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def hstrlen(key: K, field: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
     val fieldGS = keyCodec.encode(field)
-    baseClient.hstrlen(keyGS, fieldGS).futureLift
+    baseClient
+      .hstrlen(keyGS, fieldGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in HSTRLEN $key $field: ${err.getMessage}") *>
@@ -394,7 +454,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hrandfield(key: K): F[Option[K]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hrandfield(keyGS).futureLift
+    baseClient
+      .hrandfield(keyGS)
+      .futureLift
       .map(gs => Option(gs).map(keyCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in HRANDFIELD $key: ${err.getMessage}") *>
@@ -404,7 +466,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def hrandfieldWithCount(key: K, count: Long): F[List[K]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hrandfieldWithCount(keyGS, count).futureLift
+    baseClient
+      .hrandfieldWithCount(keyGS, count)
+      .futureLift
       .map(_.toList.map(keyCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(
@@ -419,7 +483,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       count: Long
   ): F[List[(K, V)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.hrandfieldWithCountWithValues(keyGS, count).futureLift
+    baseClient
+      .hrandfieldWithCountWithValues(keyGS, count)
+      .futureLift
       .map { javaArray =>
         javaArray.toList.map { pair =>
           keyCodec.decode(pair(0)) -> valueCodec.decode(pair(1))
@@ -441,7 +507,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val elementsArray = elements.map(valueCodec.encode).toArray
-      baseClient.lpush(keyGS, elementsArray).futureLift
+      baseClient
+        .lpush(keyGS, elementsArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in LPUSH $key: ${err.getMessage}") *>
@@ -456,7 +524,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val elementsArray = elements.map(valueCodec.encode).toArray
-      baseClient.rpush(keyGS, elementsArray).futureLift
+      baseClient
+        .rpush(keyGS, elementsArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in RPUSH $key: ${err.getMessage}") *>
@@ -467,7 +537,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def lpop(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.lpop(keyGS).futureLift
+    baseClient
+      .lpop(keyGS)
+      .futureLift
       .map(gs => Option(gs).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in LPOP $key: ${err.getMessage}") *>
@@ -477,7 +549,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def rpop(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.rpop(keyGS).futureLift
+    baseClient
+      .rpop(keyGS)
+      .futureLift
       .map(gs => Option(gs).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in RPOP $key: ${err.getMessage}") *>
@@ -487,7 +561,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def lpopCount(key: K, count: Long): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.lpopCount(keyGS, count).futureLift
+    baseClient
+      .lpopCount(keyGS, count)
+      .futureLift
       .map(arr =>
         if (arr == null) List.empty else arr.toList.map(valueCodec.decode)
       )
@@ -499,7 +575,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def rpopCount(key: K, count: Long): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.rpopCount(keyGS, count).futureLift
+    baseClient
+      .rpopCount(keyGS, count)
+      .futureLift
       .map(arr =>
         if (arr == null) List.empty else arr.toList.map(valueCodec.decode)
       )
@@ -511,7 +589,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def lrange(key: K, start: Long, stop: Long): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.lrange(keyGS, start, stop).futureLift
+    baseClient
+      .lrange(keyGS, start, stop)
+      .futureLift
       .map(_.toList.map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in LRANGE $key $start $stop: ${err.getMessage}") *>
@@ -521,7 +601,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def lindex(key: K, index: Long): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.lindex(keyGS, index).futureLift
+    baseClient
+      .lindex(keyGS, index)
+      .futureLift
       .map(gs => Option(gs).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in LINDEX $key $index: ${err.getMessage}") *>
@@ -531,7 +613,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def llen(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.llen(keyGS).futureLift
+    baseClient
+      .llen(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in LLEN $key: ${err.getMessage}") *>
@@ -541,7 +625,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def ltrim(key: K, start: Long, stop: Long): F[Unit] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.ltrim(keyGS, start, stop).futureLift
+    baseClient
+      .ltrim(keyGS, start, stop)
+      .futureLift
       .void
       .handleErrorWith { err =>
         Log[F].error(s"Error in LTRIM $key $start $stop: ${err.getMessage}") *>
@@ -552,7 +638,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def lset(key: K, index: Long, element: V): F[Unit] = {
     val keyGS = keyCodec.encode(key)
     val elementGS = valueCodec.encode(element)
-    baseClient.lset(keyGS, index, elementGS).futureLift
+    baseClient
+      .lset(keyGS, index, elementGS)
+      .futureLift
       .void
       .handleErrorWith { err =>
         Log[F].error(s"Error in LSET $key $index: ${err.getMessage}") *>
@@ -563,7 +651,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def lrem(key: K, count: Long, element: V): F[Long] = {
     val keyGS = keyCodec.encode(key)
     val elementGS = valueCodec.encode(element)
-    baseClient.lrem(keyGS, count, elementGS).futureLift
+    baseClient
+      .lrem(keyGS, count, elementGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in LREM $key $count: ${err.getMessage}") *>
@@ -585,7 +675,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       glide.api.models.commands.LInsertOptions.InsertPosition.AFTER
     }
-    baseClient.linsert(keyGS, position, pivotGS, elementGS).futureLift
+    baseClient
+      .linsert(keyGS, position, pivotGS, elementGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in LINSERT $key: ${err.getMessage}") *>
@@ -604,7 +696,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val elementGS = valueCodec.encode(element)
     val glidePosition = position.toGlide
 
-    baseClient.linsert(keyGS, glidePosition, pivotGS, elementGS).futureLift
+    baseClient
+      .linsert(keyGS, glidePosition, pivotGS, elementGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in LINSERT $key: ${err.getMessage}") *>
@@ -615,7 +709,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def lpos(key: K, element: V): F[Option[Long]] = {
     val keyGS = keyCodec.encode(key)
     val elementGS = valueCodec.encode(element)
-    baseClient.lpos(keyGS, elementGS).futureLift
+    baseClient
+      .lpos(keyGS, elementGS)
+      .futureLift
       .map(result => Option(result).map(_.longValue()))
       .handleErrorWith { err =>
         Log[F].error(s"Error in LPOS $key: ${err.getMessage}") *>
@@ -631,7 +727,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val membersArray = members.map(valueCodec.encode).toArray
-      baseClient.sadd(keyGS, membersArray).futureLift
+      baseClient
+        .sadd(keyGS, membersArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in SADD $key: ${err.getMessage}") *>
@@ -646,7 +744,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val membersArray = members.map(valueCodec.encode).toArray
-      baseClient.srem(keyGS, membersArray).futureLift
+      baseClient
+        .srem(keyGS, membersArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in SREM $key: ${err.getMessage}") *>
@@ -657,7 +757,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def smembers(key: K): F[Set[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.smembers(keyGS).futureLift
+    baseClient
+      .smembers(keyGS)
+      .futureLift
       .map { javaSet =>
         import scala.jdk.CollectionConverters.*
         javaSet.asScala.map(valueCodec.decode).toSet
@@ -671,7 +773,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def sismember(key: K, member: V): F[Boolean] = {
     val keyGS = keyCodec.encode(key)
     val memberGS = valueCodec.encode(member)
-    baseClient.sismember(keyGS, memberGS).futureLift
+    baseClient
+      .sismember(keyGS, memberGS)
+      .futureLift
       .map(_.booleanValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in SISMEMBER $key: ${err.getMessage}") *>
@@ -685,7 +789,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val membersArray = members.map(valueCodec.encode).toArray
-      baseClient.smismember(keyGS, membersArray).futureLift
+      baseClient
+        .smismember(keyGS, membersArray)
+        .futureLift
         .map { javaArray =>
           javaArray.map(_.booleanValue()).toList
         }
@@ -698,7 +804,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def scard(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.scard(keyGS).futureLift
+    baseClient
+      .scard(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in SCARD $key: ${err.getMessage}") *>
@@ -711,7 +819,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       Async[F].pure(Set.empty[V])
     } else {
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sunion(keysArray).futureLift
+      baseClient
+        .sunion(keysArray)
+        .futureLift
         .map { javaSet =>
           import scala.jdk.CollectionConverters.*
           javaSet.asScala.map(valueCodec.decode).toSet
@@ -729,7 +839,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val destGS = keyCodec.encode(destination)
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sunionstore(destGS, keysArray).futureLift
+      baseClient
+        .sunionstore(destGS, keysArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(
@@ -745,7 +857,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       Async[F].pure(Set.empty[V])
     } else {
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sinter(keysArray).futureLift
+      baseClient
+        .sinter(keysArray)
+        .futureLift
         .map { javaSet =>
           import scala.jdk.CollectionConverters.*
           javaSet.asScala.map(valueCodec.decode).toSet
@@ -763,7 +877,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val destGS = keyCodec.encode(destination)
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sinterstore(destGS, keysArray).futureLift
+      baseClient
+        .sinterstore(destGS, keysArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(
@@ -779,7 +895,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       Async[F].pure(Set.empty[V])
     } else {
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sdiff(keysArray).futureLift
+      baseClient
+        .sdiff(keysArray)
+        .futureLift
         .map { javaSet =>
           import scala.jdk.CollectionConverters.*
           javaSet.asScala.map(valueCodec.decode).toSet
@@ -797,7 +915,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val destGS = keyCodec.encode(destination)
       val keysArray = keys.map(keyCodec.encode).toArray
-      baseClient.sdiffstore(destGS, keysArray).futureLift
+      baseClient
+        .sdiffstore(destGS, keysArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(
@@ -810,7 +930,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def spop(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.spop(keyGS).futureLift
+    baseClient
+      .spop(keyGS)
+      .futureLift
       .map(result => Option(result).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in SPOP $key: ${err.getMessage}") *>
@@ -820,7 +942,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def spopCount(key: K, count: Long): F[Set[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.spopCount(keyGS, count).futureLift
+    baseClient
+      .spopCount(keyGS, count)
+      .futureLift
       .map { javaSet =>
         import scala.jdk.CollectionConverters.*
         javaSet.asScala.map(valueCodec.decode).toSet
@@ -833,7 +957,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def srandmember(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.srandmember(keyGS).futureLift
+    baseClient
+      .srandmember(keyGS)
+      .futureLift
       .map(result => Option(result).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in SRANDMEMBER $key: ${err.getMessage}") *>
@@ -843,7 +969,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def srandmemberCount(key: K, count: Long): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.srandmember(keyGS, count).futureLift
+    baseClient
+      .srandmember(keyGS, count)
+      .futureLift
       .map { javaArray =>
         javaArray.toList.map(valueCodec.decode)
       }
@@ -857,7 +985,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val sourceGS = keyCodec.encode(source)
     val destGS = keyCodec.encode(destination)
     val memberGS = valueCodec.encode(member)
-    baseClient.smove(sourceGS, destGS, memberGS).futureLift
+    baseClient
+      .smove(sourceGS, destGS, memberGS)
+      .futureLift
       .map(_.booleanValue())
       .handleErrorWith { err =>
         Log[F].error(
@@ -878,7 +1008,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
         valueCodec.encode(member) -> Double.box(score)
       }.asJava
 
-      baseClient.zadd(keyGS, javaMap).futureLift
+      baseClient
+        .zadd(keyGS, javaMap)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in ZADD $key: ${err.getMessage}") *>
@@ -901,7 +1033,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       }.asJava
       val glideOptions = ZAddOptions.toGlide(options)
 
-      baseClient.zadd(keyGS, javaMap, glideOptions).futureLift
+      baseClient
+        .zadd(keyGS, javaMap, glideOptions)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(
@@ -918,7 +1052,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val membersArray = members.map(valueCodec.encode).toArray
-      baseClient.zrem(keyGS, membersArray).futureLift
+      baseClient
+        .zrem(keyGS, membersArray)
+        .futureLift
         .map(_.longValue())
         .handleErrorWith { err =>
           Log[F].error(s"Error in ZREM $key: ${err.getMessage}") *>
@@ -931,7 +1067,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val keyGS = keyCodec.encode(key)
     val rangeQuery =
       new glide.api.models.commands.RangeOptions.RangeByIndex(start, stop)
-    baseClient.zrange(keyGS, rangeQuery).futureLift
+    baseClient
+      .zrange(keyGS, rangeQuery)
+      .futureLift
       .map { javaArray =>
         javaArray.toList.map(valueCodec.decode)
       }
@@ -949,7 +1087,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     val keyGS = keyCodec.encode(key)
     val rangeQuery =
       new glide.api.models.commands.RangeOptions.RangeByIndex(start, stop)
-    baseClient.zrangeWithScores(keyGS, rangeQuery).futureLift
+    baseClient
+      .zrangeWithScores(keyGS, rangeQuery)
+      .futureLift
       .map { javaMap =>
         import scala.jdk.CollectionConverters.*
         javaMap.asScala.toList.map { case (gs, score) =>
@@ -967,7 +1107,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def zscore(key: K, member: V): F[Option[Double]] = {
     val keyGS = keyCodec.encode(key)
     val memberGS = valueCodec.encode(member)
-    baseClient.zscore(keyGS, memberGS).futureLift
+    baseClient
+      .zscore(keyGS, memberGS)
+      .futureLift
       .map(result => Option(result).map(_.doubleValue()))
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZSCORE $key: ${err.getMessage}") *>
@@ -981,7 +1123,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
     } else {
       val keyGS = keyCodec.encode(key)
       val membersArray = members.map(valueCodec.encode).toArray
-      baseClient.zmscore(keyGS, membersArray).futureLift
+      baseClient
+        .zmscore(keyGS, membersArray)
+        .futureLift
         .map { javaArray =>
           javaArray.toList.map(score => Option(score).map(_.doubleValue()))
         }
@@ -994,7 +1138,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zcard(key: K): F[Long] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zcard(keyGS).futureLift
+    baseClient
+      .zcard(keyGS)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZCARD $key: ${err.getMessage}") *>
@@ -1005,7 +1151,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def zrank(key: K, member: V): F[Option[Long]] = {
     val keyGS = keyCodec.encode(key)
     val memberGS = valueCodec.encode(member)
-    baseClient.zrank(keyGS, memberGS).futureLift
+    baseClient
+      .zrank(keyGS, memberGS)
+      .futureLift
       .map(result => Option(result).map(_.longValue()))
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZRANK $key: ${err.getMessage}") *>
@@ -1016,7 +1164,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def zrevrank(key: K, member: V): F[Option[Long]] = {
     val keyGS = keyCodec.encode(key)
     val memberGS = valueCodec.encode(member)
-    baseClient.zrevrank(keyGS, memberGS).futureLift
+    baseClient
+      .zrevrank(keyGS, memberGS)
+      .futureLift
       .map(result => Option(result).map(_.longValue()))
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZREVRANK $key: ${err.getMessage}") *>
@@ -1027,7 +1177,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
   override def zincrby(key: K, increment: Double, member: V): F[Double] = {
     val keyGS = keyCodec.encode(key)
     val memberGS = valueCodec.encode(member)
-    baseClient.zincrby(keyGS, increment, memberGS).futureLift
+    baseClient
+      .zincrby(keyGS, increment, memberGS)
+      .futureLift
       .map(_.doubleValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZINCRBY $key $increment: ${err.getMessage}") *>
@@ -1041,7 +1193,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       new glide.api.models.commands.RangeOptions.ScoreBoundary(min, true)
     val maxScore =
       new glide.api.models.commands.RangeOptions.ScoreBoundary(max, true)
-    baseClient.zcount(keyGS, minScore, maxScore).futureLift
+    baseClient
+      .zcount(keyGS, minScore, maxScore)
+      .futureLift
       .map(_.longValue())
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZCOUNT $key $min $max: ${err.getMessage}") *>
@@ -1051,7 +1205,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zpopmin(key: K): F[Option[(V, Double)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zpopmin(keyGS).futureLift
+    baseClient
+      .zpopmin(keyGS)
+      .futureLift
       .map { javaMap =>
         import scala.jdk.CollectionConverters.*
         javaMap.asScala.headOption.map { case (gs, score) =>
@@ -1066,7 +1222,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zpopminCount(key: K, count: Long): F[List[(V, Double)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zpopmin(keyGS, count).futureLift
+    baseClient
+      .zpopmin(keyGS, count)
+      .futureLift
       .map { javaMap =>
         import scala.jdk.CollectionConverters.*
         javaMap.asScala.toList.map { case (gs, score) =>
@@ -1081,7 +1239,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zpopmax(key: K): F[Option[(V, Double)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zpopmax(keyGS).futureLift
+    baseClient
+      .zpopmax(keyGS)
+      .futureLift
       .map { javaMap =>
         import scala.jdk.CollectionConverters.*
         javaMap.asScala.headOption.map { case (gs, score) =>
@@ -1096,7 +1256,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zpopmaxCount(key: K, count: Long): F[List[(V, Double)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zpopmax(keyGS, count).futureLift
+    baseClient
+      .zpopmax(keyGS, count)
+      .futureLift
       .map { javaMap =>
         import scala.jdk.CollectionConverters.*
         javaMap.asScala.toList.map { case (gs, score) =>
@@ -1111,7 +1273,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zrandmember(key: K): F[Option[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zrandmember(keyGS).futureLift
+    baseClient
+      .zrandmember(keyGS)
+      .futureLift
       .map(result => Option(result).map(valueCodec.decode))
       .handleErrorWith { err =>
         Log[F].error(s"Error in ZRANDMEMBER $key: ${err.getMessage}") *>
@@ -1121,7 +1285,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
 
   override def zrandmemberCount(key: K, count: Long): F[List[V]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zrandmemberWithCount(keyGS, count).futureLift
+    baseClient
+      .zrandmemberWithCount(keyGS, count)
+      .futureLift
       .map { javaArray =>
         javaArray.toList.map(valueCodec.decode)
       }
@@ -1136,7 +1302,9 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
       count: Long
   ): F[List[(V, Double)]] = {
     val keyGS = keyCodec.encode(key)
-    baseClient.zrandmemberWithCountWithScores(keyGS, count).futureLift
+    baseClient
+      .zrandmemberWithCountWithScores(keyGS, count)
+      .futureLift
       .map { javaArray =>
         javaArray.toList.map { pair =>
           val gs = pair(0).asInstanceOf[glide.api.models.GlideString]
@@ -1151,6 +1319,374 @@ private[valkey4cats] abstract class BaseValkey[F[_]: MkValkey, K, V](
           Async[F].raiseError(err)
       }
   }
+
+  // ==================== Server Management Commands ====================
+
+  override def info: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .info()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in INFO: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .info()
+          .futureLift
+          .map(_.getSingleValue)
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in INFO: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def info(sections: Set[InfoSection]): F[String] = {
+    val sectionsArray = InfoSection.toGlideArray(sections)
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .info(sectionsArray)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in INFO with sections: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .info(sectionsArray)
+          .futureLift
+          .map(_.getSingleValue)
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in INFO with sections: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def configRewrite: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .configRewrite()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG REWRITE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .configRewrite()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG REWRITE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def configResetStat: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .configResetStat()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG RESETSTAT: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .configResetStat()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG RESETSTAT: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def configGet(parameters: Set[String]): F[Map[String, String]] = {
+    val paramsArray = parameters.toArray
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .configGet(paramsArray)
+          .futureLift
+          .map(_.asScala.toMap)
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG GET: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .configGet(paramsArray)
+          .futureLift
+          .map(_.asScala.toMap)
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG GET: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def configSet(parameters: Map[String, String]): F[String] = {
+    val javaMap = parameters.asJava
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .configSet(javaMap)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG SET: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .configSet(javaMap)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in CONFIG SET: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def time: F[(Long, Long)] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .time()
+          .futureLift
+          .map { array =>
+            val seconds = array(0).toLong
+            val microseconds = array(1).toLong
+            (seconds, microseconds)
+          }
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in TIME: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .time()
+          .futureLift
+          .map { array =>
+            val seconds = array(0).toLong
+            val microseconds = array(1).toLong
+            (seconds, microseconds)
+          }
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in TIME: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def lastSave: F[Long] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .lastsave()
+          .futureLift
+          .map(_.longValue())
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in LASTSAVE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .lastsave()
+          .futureLift
+          .map(_.longValue())
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in LASTSAVE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def flushAll: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .flushall()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in FLUSHALL: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .flushall()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in FLUSHALL: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def flushAll(mode: FlushMode): F[String] = {
+    val glideMode = FlushMode.toGlide(mode)
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .flushall(glideMode)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in FLUSHALL with mode $mode: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .flushall(glideMode)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in FLUSHALL with mode $mode: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def flushDB: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .flushdb()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in FLUSHDB: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .flushdb()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in FLUSHDB: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def flushDB(mode: FlushMode): F[String] = {
+    val glideMode = FlushMode.toGlide(mode)
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .flushdb(glideMode)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in FLUSHDB with mode $mode: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .flushdb(glideMode)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in FLUSHDB with mode $mode: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def lolwut: F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .lolwut()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in LOLWUT: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .lolwut()
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in LOLWUT: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def lolwut(version: Int): F[String] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .lolwut(version)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in LOLWUT with version $version: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .lolwut(version)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in LOLWUT with version $version: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+    }
+
+  override def lolwut(version: Int, parameters: List[Int]): F[String] = {
+    val paramsArray = parameters.toArray
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .lolwut(version, paramsArray)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in LOLWUT with version $version and parameters: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .lolwut(version, paramsArray)
+          .futureLift
+          .handleErrorWith { err =>
+            Log[F].error(
+              s"Error in LOLWUT with version $version and parameters: ${err.getMessage}"
+            ) *>
+              Async[F].raiseError(err)
+          }
+    }
+  }
+
+  override def dbSize: F[Long] =
+    client match {
+      case Left(standalone) =>
+        standalone.underlying
+          .dbsize()
+          .futureLift
+          .map(_.longValue())
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in DBSIZE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+      case Right(cluster) =>
+        cluster.underlying
+          .dbsize()
+          .futureLift
+          .map(_.longValue())
+          .handleErrorWith { err =>
+            Log[F].error(s"Error in DBSIZE: ${err.getMessage}") *>
+              Async[F].raiseError(err)
+          }
+    }
 }
 
 /** Standalone client commands implementation */

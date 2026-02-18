@@ -2,11 +2,8 @@ package dev.profunktor.valkey4cats
 
 import cats.effect.*
 import dev.profunktor.valkey4cats.codec.Codec
-import dev.profunktor.valkey4cats.connection.{
-  ValkeyClient,
-  ValkeyClusterClient
-}
-import dev.profunktor.valkey4cats.effect.{Log, MkValkey}
+import dev.profunktor.valkey4cats.connection.{ValkeyClient, ValkeyClusterClient}
+import dev.profunktor.valkey4cats.effect.MkValkey
 import dev.profunktor.valkey4cats.model.{
   ValkeyClientConfig,
   ValkeyClusterConfig,
@@ -31,7 +28,7 @@ object Valkey {
     *
     * Provides various convenience constructors for creating Valkey clients
     */
-  class ValkeyPartiallyApplied[F[_]: MkValkey: Async: Log] {
+  class ValkeyPartiallyApplied[F[_]: MkValkey: Async] {
 
     /** Create a UTF-8 string-based connection from URI
       *
@@ -216,6 +213,6 @@ object Valkey {
     *   Valkey[IO].utf8("redis://localhost:6379")
     * }}}
     */
-  def apply[F[_]: MkValkey: Async: Log]: ValkeyPartiallyApplied[F] =
+  def apply[F[_]: MkValkey: Async]: ValkeyPartiallyApplied[F] =
     new ValkeyPartiallyApplied[F]
 }

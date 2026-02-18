@@ -13,3 +13,7 @@ hs_err_pid*
 #SBT
 target
 project/target
+
+.DS_Store
+.vscode
+.metals

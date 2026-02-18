@@ -2,11 +2,7 @@ package dev.profunktor.valkey4cats.arguments
 
 import glide.api.models.commands.RangeOptions as G
 import dev.profunktor.valkey4cats.arguments.LexBoundary.Lex
-import dev.profunktor.valkey4cats.arguments.RangeQuery.{
-  ByIndex,
-  ByLex,
-  ByScore
-}
+import dev.profunktor.valkey4cats.arguments.RangeQuery.{ByIndex, ByLex, ByScore}
 import dev.profunktor.valkey4cats.arguments.ScoreBoundary.Score
 
 /** Range query for sorted set commands */

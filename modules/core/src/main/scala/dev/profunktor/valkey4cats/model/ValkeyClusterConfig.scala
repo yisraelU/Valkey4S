@@ -125,7 +125,7 @@ sealed abstract class ValkeyClusterConfig {
         advancedBuilder.refreshTopologyFromInitialNodes
       )
       tlsAdvancedConfig.foreach(advancedBuilder.tlsAdvancedConfiguration)
-      builder.advancedConfiguration(advancedBuilder.build())
+      val _ = builder.advancedConfiguration(advancedBuilder.build())
     }
 
     builder.build()
