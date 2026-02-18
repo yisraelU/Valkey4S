@@ -12,6 +12,6 @@ private[valkey4cats] object TxThreadFactory extends ThreadFactory {
       val now = Instant.now().atOffset(ZoneOffset.UTC)
       val time = f.format(now)
       t.setName(s"valkey-tx-ec-$time")
-      return t
+      t
     }
 }

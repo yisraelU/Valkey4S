@@ -11,13 +11,13 @@ import dev.profunktor.valkey4cats.model.ValkeyClusterConfig
   * @param underlying The underlying GlideClusterClient instance
   */
 sealed abstract class ValkeyClusterClient private (
-    val underlying: GlideClusterClient
+    private[valkey4cats] val underlying: GlideClusterClient
 )
 
 object ValkeyClusterClient {
 
   /** Private implementation class */
-  private final case class ValkeyClusterClientImpl(
+  private final class ValkeyClusterClientImpl(
       override val underlying: GlideClusterClient
   ) extends ValkeyClusterClient(underlying)
 
@@ -39,7 +39,7 @@ object ValkeyClusterClient {
       glideConfig = config.toGlide
       client <- FutureLift[F].lift(GlideClusterClient.createClient(glideConfig))
       _ <- logger.info("Valkey cluster client created successfully")
-    } yield ValkeyClusterClientImpl(client)
+    } yield new ValkeyClusterClientImpl(client)
 
     val release: ValkeyClusterClient => F[Unit] = client =>
       (for {

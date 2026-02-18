@@ -92,16 +92,10 @@ final case class SetOptions(
 
 object SetOptions {
   private[valkey4cats] def toGlide(options: SetOptions): G.SetOptions = {
-    var builder = G.SetOptions.builder()
-
-    options.expiry.foreach(e => builder = builder.expiry(e.toGlide))
-    options.condition.foreach(c =>
-      builder = SetCondition.applyToBuilder(c, builder)
-    )
-    if (options.returnOldValue) {
-      builder = builder.returnOldValue(true)
-    }
-
-    builder.build()
+    val b0 = G.SetOptions.builder()
+    val b1 = options.expiry.fold(b0)(e => b0.expiry(e.toGlide))
+    val b2 = options.condition.fold(b1)(c => SetCondition.applyToBuilder(c, b1))
+    val b3 = if (options.returnOldValue) b2.returnOldValue(true) else b2
+    b3.build()
   }
 }

@@ -37,6 +37,15 @@ object ServerCredentials {
   /** Password-only authentication (Redis 5.0+) */
   sealed abstract class Password extends ServerCredentials {
     def password: String
+
+    override def equals(obj: Any): Boolean = obj match {
+      case other: Password => this.password == other.password
+      case _               => false
+    }
+
+    override def hashCode(): Int = password.hashCode
+
+    override def toString: String = "Password(***)"
   }
 
   object Password {
@@ -51,6 +60,16 @@ object ServerCredentials {
   sealed abstract class UsernamePassword extends ServerCredentials {
     def username: String
     def password: String
+
+    override def equals(obj: Any): Boolean = obj match {
+      case other: UsernamePassword =>
+        this.username == other.username && this.password == other.password
+      case _ => false
+    }
+
+    override def hashCode(): Int = (username, password).hashCode()
+
+    override def toString: String = s"UsernamePassword($username, ***)"
   }
 
   object UsernamePassword {
@@ -69,6 +88,15 @@ object ServerCredentials {
   /** AWS IAM authentication (ElastiCache/MemoryDB) */
   sealed abstract class IamAuth extends ServerCredentials {
     def config: IamAuthConfig
+
+    override def equals(obj: Any): Boolean = obj match {
+      case other: IamAuth => this.config == other.config
+      case _              => false
+    }
+
+    override def hashCode(): Int = config.hashCode()
+
+    override def toString: String = s"IamAuth($config)"
   }
 
   object IamAuth {

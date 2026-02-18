@@ -1,5 +1,6 @@
 package dev.profunktor.valkey4cats.model
 
+import com.comcast.ip4s.{host, port}
 import munit.FunSuite
 
 class ValkeyUriSuite extends FunSuite {
@@ -11,8 +12,8 @@ class ValkeyUriSuite extends FunSuite {
     val uri = result.toOption.get
 
     assertEquals(uri.scheme, ValkeyUri.Scheme.Valkey)
-    assertEquals(uri.host, "localhost")
-    assertEquals(uri.port, 6379)
+    assertEquals(uri.host, host"localhost")
+    assertEquals(uri.port, port"6379")
     assertEquals(uri.useTls, false)
     assertEquals(uri.credentials, None)
     assertEquals(uri.database, None)
@@ -25,8 +26,8 @@ class ValkeyUriSuite extends FunSuite {
     val uri = result.toOption.get
 
     assertEquals(uri.scheme, ValkeyUri.Scheme.Valkeys)
-    assertEquals(uri.host, "secure-server")
-    assertEquals(uri.port, 6380)
+    assertEquals(uri.host, host"secure-server")
+    assertEquals(uri.port, port"6380")
     assertEquals(uri.useTls, true)
   }
 
@@ -86,7 +87,7 @@ class ValkeyUriSuite extends FunSuite {
     assert(result.isRight)
     val uri = result.toOption.get
 
-    assertEquals(uri.database, Some(2))
+    assertEquals(uri.database.map(_.value), Some(2))
   }
 
   test("fromString should use default port when not specified") {
@@ -95,7 +96,7 @@ class ValkeyUriSuite extends FunSuite {
     assert(result.isRight)
     val uri = result.toOption.get
 
-    assertEquals(uri.port, 6379)
+    assertEquals(uri.port, port"6379")
   }
 
   test("fromString should reject invalid scheme") {
@@ -134,11 +135,11 @@ class ValkeyUriSuite extends FunSuite {
     val config = ValkeyClientConfig.fromUri(uri)
 
     assertEquals(config.addresses.size, 1)
-    assertEquals(config.addresses.head.host, "secure-host")
-    assertEquals(config.addresses.head.port, 6380)
+    assertEquals(config.addresses.head.host, host"secure-host")
+    assertEquals(config.addresses.head.port, port"6380")
     assertEquals(config.tlsMode.isEnabled, true)
     assert(config.credentials.isDefined)
-    assertEquals(config.databaseId, Some(3))
+    assertEquals(config.databaseId.map(_.value), Some(3))
   }
 
   test("ValkeyClientConfig.fromUriString should delegate to ValkeyUri") {
@@ -147,8 +148,8 @@ class ValkeyUriSuite extends FunSuite {
     assert(result.isRight)
     val config = result.toOption.get
 
-    assertEquals(config.addresses.head.host, "localhost")
-    assertEquals(config.addresses.head.port, 6379)
-    assertEquals(config.databaseId, Some(1))
+    assertEquals(config.addresses.head.host, host"localhost")
+    assertEquals(config.addresses.head.port, port"6379")
+    assertEquals(config.databaseId.map(_.value), Some(1))
   }
 }

@@ -12,7 +12,7 @@ import dev.profunktor.valkey4cats.model.{ValkeyClientConfig, ValkeyUri}
   * @param underlying The underlying GlideClient instance
   */
 sealed abstract class ValkeyClient private (
-    val underlying: GlideClient
+    private[valkey4cats] val underlying: GlideClient
 )
 
 object ValkeyClient {
@@ -22,9 +22,8 @@ object ValkeyClient {
       override val underlying: GlideClient
   ) extends ValkeyClient(underlying)
 
-  def apply(underlying: GlideClient): ValkeyClient = new ValkeyClientImpl(
-    underlying
-  )
+  private[valkey4cats] def apply(underlying: GlideClient): ValkeyClient =
+    new ValkeyClientImpl(underlying)
 
   /** Create a ValkeyClient from configuration with Resource management
    *

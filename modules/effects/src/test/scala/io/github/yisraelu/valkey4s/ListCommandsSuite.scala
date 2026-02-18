@@ -1,5 +1,7 @@
 package dev.profunktor.valkey4cats
 
+import dev.profunktor.valkey4cats.arguments.InsertPosition
+
 class ListCommandsSuite extends ValkeyTestSuite {
 
   test("LPUSH should add elements to the head of list") {
@@ -226,7 +228,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list16", "a", "b", "d", "e")
-        length <- valkey.linsert("list16", before = true, "d", "c")
+        length <- valkey.linsert("list16", InsertPosition.Before, "d", "c")
         result <- valkey.lrange("list16", 0, -1)
         _ <- valkey.del("list16")
       } yield {
@@ -240,7 +242,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list17", "a", "b", "c", "e")
-        length <- valkey.linsert("list17", before = false, "c", "d")
+        length <- valkey.linsert("list17", InsertPosition.After, "c", "d")
         result <- valkey.lrange("list17", 0, -1)
         _ <- valkey.del("list17")
       } yield {
@@ -254,7 +256,7 @@ class ListCommandsSuite extends ValkeyTestSuite {
     valkeyClient.use { valkey =>
       for {
         _ <- valkey.rpush("list18", "a", "b", "c")
-        length <- valkey.linsert("list18", before = true, "x", "y")
+        length <- valkey.linsert("list18", InsertPosition.Before, "x", "y")
         _ <- valkey.del("list18")
       } yield assertEquals(length, -1L)
     }

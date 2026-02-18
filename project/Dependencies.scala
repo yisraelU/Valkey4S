@@ -7,6 +7,7 @@ object Dependencies {
     val catsCore = "2.13.0"
     val catsEffect = "3.6.3"
     val literally = "1.2.0"
+    val ip4s = "3.7.0"
     val log4cats = "2.7.1"
 
     // Test dependencies
@@ -41,6 +42,7 @@ object Dependencies {
   val catsCore = "org.typelevel" %% "cats-core" % Versions.catsCore
   val catsEffect = "org.typelevel" %% "cats-effect" % Versions.catsEffect
   val literally = "org.typelevel" %% "literally" % Versions.literally
+  val ip4s = "com.comcast" %% "ip4s-core" % Versions.ip4s
 
   // Logging
   val log4catsCore = "org.typelevel" %% "log4cats-core" % Versions.log4cats
@@ -57,6 +59,7 @@ object Dependencies {
       catsCore,
       catsEffect,
       literally,
+      ip4s,
     )
 
     val test = Seq(

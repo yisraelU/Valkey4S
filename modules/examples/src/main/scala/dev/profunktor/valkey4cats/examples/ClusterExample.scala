@@ -1,6 +1,7 @@
 package dev.profunktor.valkey4cats.examples
 
 import cats.effect.*
+import com.comcast.ip4s.{host, port}
 import dev.profunktor.valkey4cats.Valkey
 import dev.profunktor.valkey4cats.codec.Codec.utf8Codec
 import dev.profunktor.valkey4cats.effect.Log
@@ -17,12 +18,12 @@ object ClusterExample extends IOApp.Simple {
   implicit val logger: Log[IO] = Log.Stdout.instance[IO]
 
   def run: IO[Unit] = {
-    // Build a cluster configuration
-    val config = ValkeyClusterConfig(
+    // Build a cluster configuration using effectful smart constructor
+    val configF = ValkeyClusterConfig.make[IO](
       addresses = List(
-        NodeAddress("localhost", 7000),
-        NodeAddress("localhost", 7001),
-        NodeAddress("localhost", 7002)
+        NodeAddress(host"localhost", port"7000"),
+        NodeAddress(host"localhost", port"7001"),
+        NodeAddress(host"localhost", port"7002")
       ),
       requestTimeout = Some(2.seconds),
       readFrom = Some(ReadFromStrategy.PreferReplica),
@@ -30,8 +31,9 @@ object ClusterExample extends IOApp.Simple {
     )
 
     // Use the cluster (with UTF-8 string codec)
-    Valkey[IO]
-      .fromClusterConfig[String, String](config)
+    Resource
+      .eval(configF)
+      .flatMap(config => Valkey[IO].fromClusterConfig[String, String](config))
       .use { valkey =>
         for {
           _ <- IO.println("=== Cluster Operations ===")

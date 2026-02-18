@@ -1,6 +1,7 @@
 package dev.profunktor.valkey4cats.model
 
 import cats.ApplicativeThrow
+import com.comcast.ip4s.{Host, Port}
 
 import java.net.URI
 import scala.util.Try
@@ -19,16 +20,16 @@ sealed abstract class ValkeyUri {
   def scheme: ValkeyUri.Scheme
 
   /** The server host */
-  def host: String
+  def host: Host
 
   /** The server port */
-  def port: Int
+  def port: Port
 
   /** Optional authentication credentials */
   def credentials: Option[ServerCredentials]
 
   /** Optional database number (0-15) */
-  def database: Option[Int]
+  def database: Option[DatabaseId]
 
   /** Whether this URI requires TLS */
   def useTls: Boolean = scheme.requiresTls
@@ -44,8 +45,8 @@ sealed abstract class ValkeyUri {
         ""
       case None => ""
     }
-    val db = database.map(d => s"/$d").getOrElse("")
-    new URI(s"${scheme.name}://$auth$host:$port$db")
+    val db = database.map(d => s"/${d.value}").getOrElse("")
+    new URI(s"${scheme.name}://$auth$host:${port.value}$db")
   }
 
   /** Check if this URI is consistent with another for cluster configuration.
@@ -67,26 +68,28 @@ object ValkeyUri {
 
   private final case class ValkeyUriImpl(
       scheme: Scheme,
-      host: String,
-      port: Int,
+      host: Host,
+      port: Port,
       credentials: Option[ServerCredentials] = None,
-      database: Option[Int] = None
+      database: Option[DatabaseId] = None
   ) extends ValkeyUri
 
   /** Create a ValkeyUri */
   def apply(
       scheme: Scheme,
-      host: String,
-      port: Int,
+      host: Host,
+      port: Port,
       credentials: Option[ServerCredentials] = None,
-      database: Option[Int] = None
+      database: Option[DatabaseId] = None
   ): ValkeyUri =
     ValkeyUriImpl(scheme, host, port, credentials, database)
 
   /** Pattern matching support */
   def unapply(
       uri: ValkeyUri
-  ): Option[(Scheme, String, Int, Option[ServerCredentials], Option[Int])] =
+  ): Option[
+    (Scheme, Host, Port, Option[ServerCredentials], Option[DatabaseId])
+  ] =
     Some((uri.scheme, uri.host, uri.port, uri.credentials, uri.database))
 
   /** URI scheme variants */
@@ -139,9 +142,16 @@ object ValkeyUri {
       )
     }
 
-    val host = Option(parsed.getHost).getOrElse("localhost")
-    val port =
-      if (parsed.getPort > 0) parsed.getPort else NodeAddress.DefaultPort
+    val hostStr = Option(parsed.getHost).getOrElse("localhost")
+    val host = Host.fromString(hostStr).getOrElse {
+      throw new IllegalArgumentException(s"Invalid host: $hostStr")
+    }
+
+    val portInt =
+      if (parsed.getPort > 0) parsed.getPort else NodeAddress.DefaultPort.value
+    val port = Port.fromInt(portInt).getOrElse {
+      throw new IllegalArgumentException(s"Invalid port: $portInt")
+    }
 
     // Parse credentials from userInfo
     val credentials: Option[ServerCredentials] =
@@ -156,11 +166,26 @@ object ValkeyUri {
       }
 
     // Parse database from path
-    val database: Option[Int] = Option(parsed.getPath)
+    val database: Option[DatabaseId] = Option(parsed.getPath)
       .filter(_.nonEmpty)
       .map(_.stripPrefix("/"))
       .filter(_.nonEmpty)
-      .flatMap(db => scala.util.Try(db.toInt).toOption)
+      .map { db =>
+        db.toIntOption match {
+          case Some(id) =>
+            DatabaseId(id) match {
+              case Right(dbId) => dbId
+              case Left(msg) =>
+                throw new IllegalArgumentException(
+                  s"Invalid database in URI: $msg"
+                )
+            }
+          case None =>
+            throw new IllegalArgumentException(
+              s"Invalid database path segment '$db': must be a number between ${DatabaseId.MinValue} and ${DatabaseId.MaxValue}"
+            )
+        }
+      }
 
     ValkeyUri(
       scheme = scheme,

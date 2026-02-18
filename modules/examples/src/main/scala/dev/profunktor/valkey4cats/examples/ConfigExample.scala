@@ -1,6 +1,7 @@
 package dev.profunktor.valkey4cats.examples
 
 import cats.effect.*
+import com.comcast.ip4s.{host, port}
 import dev.profunktor.valkey4cats.Valkey
 import dev.profunktor.valkey4cats.codec.Codec.utf8Codec
 import dev.profunktor.valkey4cats.effect.Log
@@ -24,9 +25,9 @@ object ConfigExample extends IOApp.Simple {
     // Example 3: TLS connection
     val _ = Valkey[IO].utf8("rediss://secure-server:6380")
 
-    // Example 4: Full configuration with all options
+    // Example 4: Full configuration with all options (using validated smart constructor)
     val config = ValkeyClientConfig(
-      addresses = List(NodeAddress("localhost", 6379)),
+      addresses = List(NodeAddress(host"localhost", port"6379")),
       tlsMode = Disabled,
       requestTimeout = Some(5.seconds),
       credentials = Some(ServerCredentials.password("mypassword")),
@@ -39,12 +40,17 @@ object ConfigExample extends IOApp.Simple {
           jitterPercent = 10
         )
       ),
-      databaseId = Some(0),
+      databaseId = Some(DatabaseId.unsafe(0)),
       clientName = Some("my-app"),
       protocolVersion = ProtocolVersion.RESP3
     )
 
-    val _ = Valkey[IO].fromConfig[String, String](config)
+    config match {
+      case Right(cfg) =>
+        val _ = Valkey[IO].fromConfig[String, String](cfg)
+      case Left(err) =>
+        System.err.println(s"Config error: $err")
+    }
 
     // Use the simple example
     simpleExample.use { valkey =>

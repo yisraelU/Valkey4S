@@ -117,16 +117,6 @@ trait ListCommands[F[_], K, V] {
   /** Insert element in the list stored at key either before or after the reference value pivot.
     *
     * @param key The key of the list
-    * @param before If true insert before pivot, otherwise insert after
-    * @param pivot The reference value
-    * @param element The element to insert
-    * @return The length of the list after the insert operation, or -1 when pivot not found
-    */
-  def linsert(key: K, before: Boolean, pivot: V, element: V): F[Long]
-
-  /** Insert element in the list stored at key either before or after the reference value pivot.
-    *
-    * @param key The key of the list
     * @param position Insert position (Before or After)
     * @param pivot The reference value
     * @param element The element to insert
